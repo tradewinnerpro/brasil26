@@ -6,6 +6,7 @@
 <title>🏆 Copa do Mundo 2026 — Bolão Oficial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ═══ RESET & VARS ═══ */
@@ -13,9 +14,9 @@
 html{scroll-behavior:smooth}
 :root{
   --bg:#05100a; --s1:#0b1a10; --s2:#111f15; --s3:#162a1c;
-  --border:rgba(255,255,255,.07); --brd-g:rgba(0,180,65,.3); --brd-y:rgba(255,215,0,.3);
-  --text:#e2f0e5; --muted:#618a6a; --dim:#304a38;
-  --green:#00b341; --gl:#00e055; --gold:#ffd700; --red:#f03c3c;
+  --border:rgba(255,255,255,.1); --brd-g:rgba(0,200,70,.35); --brd-y:rgba(255,215,0,.35);
+  --text:#edf5ef; --muted:#9ecaaa; --dim:#72a880;
+  --green:#00c447; --gl:#00ee5a; --gold:#ffd700; --red:#ff5555;
   --fh:'Bebas Neue',Impact,sans-serif; --fb:'Inter',system-ui,sans-serif; --r:13px;
 }
 body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875rem;min-height:100vh;overflow-x:hidden}
@@ -401,7 +402,7 @@ function subscribeRT() {
 }
 
 // ══════════════════════════════════════════════════════
-//  🏳️  FLAGS — flagcdn.com (bandeiras reais)
+//  🏳️  FLAGS — flag-icons CSS (sempre funciona, sem CDN externo)
 // ══════════════════════════════════════════════════════
 const FC = {
   'México':'mx','África do Sul':'za','Coreia do Sul':'kr','República Tcheca':'cz',
@@ -417,11 +418,19 @@ const FC = {
   'Portugal':'pt','RD do Congo':'cd','Uzbequistão':'uz','Colômbia':'co',
   'Inglaterra':'gb-eng','Croácia':'hr','Gana':'gh','Panamá':'pa',
 };
+// Retorna span com CSS flag-icons (SVG via CSS background, sem img externa)
 function fi(t, w=26){
-  const c = FC[t];
-  if (!c) return `<span style="width:${w}px;height:${Math.round(w*.67)}px;display:inline-block;background:rgba(255,255,255,.1);border-radius:2px;flex-shrink:0"></span>`;
-  const h = Math.round(w * .67);
-  return `<img class="fi" style="width:${w}px;height:${h}px" src="https://flagcdn.com/w${w}/${c}.png" alt="${t}" loading="lazy" onerror="this.style.opacity='.1'">`;
+  const c=FC[t];
+  const h=Math.round(w*.67);
+  const base=`display:inline-block;width:${w}px;height:${h}px;border-radius:2px;flex-shrink:0;vertical-align:middle;box-shadow:0 1px 3px rgba(0,0,0,.4)`;
+  if(!c) return `<span style="${base};background:rgba(255,255,255,.1)"></span>`;
+  return `<span class="fi fi-${c}" style="${base}"></span>`;
+}
+// Bandeira pequena para cabeçalho dos grupos
+function fiSm(t){
+  const c=FC[t];
+  if(!c) return '';
+  return `<span class="fi fi-${c}" style="display:inline-block;width:20px;height:14px;border-radius:2px;opacity:.8;vertical-align:middle;box-shadow:0 1px 3px rgba(0,0,0,.4)"></span>`;
 }
 
 // ══════════════════════════════════════════════════════
@@ -621,7 +630,7 @@ function renderTabela() {
 
   Object.keys(GROUPS).forEach(g=>{
     const st=calcSt(g), brazil=(g==='C');
-    const gflags=GROUPS[g].map(t=>`<img class="gfl" src="https://flagcdn.com/w22/${FC[t]||''}.png" alt="${t}" onerror="this.style.opacity='.1'">`).join('');
+    const gflags=GROUPS[g].map(t=>fiSm(t)).join(' ');
     let stRows=st.map((row,i)=>{
       const pb=['pb1','pb2','pb3','pb4'][Math.min(i,3)];
       return`<tr>
@@ -752,8 +761,7 @@ function renderPalpites(){
   </div><div class="gg">`;
   Object.keys(GROUPS).forEach(g=>{
     const brazil=g==='C';
-    const gflags=GROUPS[g].map(t=>`<img class="gfl" src="https://flagcdn.com/w22/${FC[t]||''}.png" alt="${t}" onerror="this.style.opacity='.1'">`).join('');
-    const rounds={};
+    const gflags=GROUPS[g].map(t=>fiSm(t)).join(' ');
     MATCHES.filter(m=>m.g===g).forEach(m=>{if(!rounds[m.r])rounds[m.r]=[];rounds[m.r].push(m);});
     let rows='';
     Object.entries(rounds).forEach(([rn,ms])=>{
