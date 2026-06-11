@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-/* ═══ RESET & VARS ═══ */
+/* ===== RESET & VARS ===== */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 :root{
@@ -71,7 +71,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
 .stt thead th{padding:7px 5px;text-align:center;color:var(--dim);font-size:.57rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;background:rgba(0,0,0,.2);border-bottom:1px solid var(--border)}
 .stt thead th:nth-child(2){text-align:left;padding-left:7px}
 .stt tbody td{padding:8px 5px;text-align:center;border-bottom:1px solid rgba(255,255,255,.022);transition:background .15s}
-.stt tbody td:nth-child(2){text-align:left;padding-left:7px}
 .stt tbody tr:hover td{background:rgba(255,255,255,.02)}
 .team-cell{display:flex;align-items:center;gap:6px}
 .fi{object-fit:cover;flex-shrink:0;border-radius:2px;box-shadow:0 1px 4px rgba(0,0,0,.5)}
@@ -160,49 +159,100 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
 </main>
 </div>
 <div class="modal-ov" id="loginModal"><div class="mbox"><button class="m-close" onclick="closeModal('loginModal')">✕</button><div class="m-ico">⚽</div><h2 class="m-ttl">BOLÃO 2026</h2><p class="m-txt">Dê seus palpites e concorra!</p><input class="inp" id="lName" placeholder="Seu apelido" maxlength="20"><input class="inp" id="lPass" type="password" placeholder="Senha (mín. 4)"><div class="m-err" id="loginErr"></div><button class="btn-sub" onclick="doLogin()">🚀 Entrar</button><p class="m-sm">Primeiro acesso? Conta criada automaticamente.</p></div></div>
-<div class="sync-bar" id="syncBar"><div class="sdot" id="sdot"></div><span id="sdotTxt">Local</span><button style="background:transparent;border:none;color:var(--green);font-size:.7rem;margin-left:4px;cursor:pointer" onclick="checkDbConnection()">⟳ BD</button></div>
+<div class="sync-bar" id="syncBar"><div class="sdot" id="sdot"></div><span id="sdotTxt">Local</span><button style="background:transparent;border:none;color:var(--green);font-size:.7rem;margin-left:4px;cursor:pointer" onclick="checkDbConnection()">⟳ BD</button><button style="background:transparent;border:none;color:var(--gold);font-size:.7rem;margin-left:4px;cursor:pointer" onclick="refreshPredictionsFromDB()">📥 Palpites</button></div>
 <div id="tc"></div>
 <footer>⚽ Copa do Mundo 2026 · 48 Seleções · 104 Jogos · Bolão com Supabase + salvamento manual / automático</footer>
 
 <script>
-const CFG = { SUPA_URL: 'https://omgcjhvhezcikfjyfonw.supabase.co', SUPA_KEY: 'sb_publishable_06GuHSVCvqZ7OlwgXJdtfw_RwM5d663', ADMIN_PASS:'copa2026' };
+// ================= CONFIG =================
+const CFG = { 
+  SUPA_URL: 'https://omgcjhvhezcikfjyfonw.supabase.co', 
+  SUPA_KEY: 'sb_publishable_06GuHSVCvqZ7OlwgXJdtfw_RwM5d663', 
+  ADMIN_PASS: 'copa2026' 
+};
 let supa = null;
-try { if (!CFG.SUPA_URL.includes('SEU_PROJETO')) supa = window.supabase.createClient(CFG.SUPA_URL, CFG.SUPA_KEY); } catch(e) {}
+try { if (!CFG.SUPA_URL.includes('SEU_PROJETO')) supa = window.supabase.createClient(CFG.SUPA_URL, CFG.SUPA_KEY); } catch(e) { console.warn(e); }
 
-let ST = { user:null, admin:false, results:{}, preds:{} };
-function load() { try { const r=localStorage.getItem('c26r'); if(r) ST.results=JSON.parse(r); const p=localStorage.getItem('c26p'); if(p) ST.preds=JSON.parse(p); const u=localStorage.getItem('c26u'); if(u) ST.user=JSON.parse(u); } catch(e){} }
-function save() { localStorage.setItem('c26r',JSON.stringify(ST.results)); localStorage.setItem('c26p',JSON.stringify(ST.preds)); if(ST.user) localStorage.setItem('c26u',JSON.stringify(ST.user)); else localStorage.removeItem('c26u'); }
-const getRes = id => ST.results[id]||null;
-function setRes(id,h,a){ ST.results[id]={h,a}; save(); if(supa) supa.from('partidas').update({ placar_casa: h, placar_visitante: a }).eq('id', id).then(); }
-function setPredLocal(id,h,a){ if(!ST.user) return; if(!ST.preds[ST.user.name]) ST.preds[ST.user.name]={}; ST.preds[ST.user.name][id]={h,a}; save(); }
-function delPredLocal(id){ if(ST.user&&ST.preds[ST.user.name]) delete ST.preds[ST.user.name][id]; save(); }
-
-async function syncPredToSupabase(user, matchId, h, a) {
-  if(!supa || !user) return;
-  try {
-    await supa.from('palpites').upsert({ user_name: user, match_id: matchId, placar_casa: h, placar_visitante: a, updated_at: new Date() }, { onConflict: 'user_name,match_id' });
-    setSyncStatus('ok','BD ✓');
-  } catch(e) { console.warn(e); setSyncStatus('er','Erro BD'); }
+// ================= ESTADO LOCAL =================
+let ST = { user: null, admin: false, results: {}, preds: {} };
+function load() { 
+  try { 
+    const r = localStorage.getItem('c26r'); if(r) ST.results = JSON.parse(r);
+    const p = localStorage.getItem('c26p'); if(p) ST.preds = JSON.parse(p);
+    const u = localStorage.getItem('c26u'); if(u) ST.user = JSON.parse(u);
+  } catch(e) {}
+}
+function save() { 
+  localStorage.setItem('c26r', JSON.stringify(ST.results));
+  localStorage.setItem('c26p', JSON.stringify(ST.preds));
+  if(ST.user) localStorage.setItem('c26u', JSON.stringify(ST.user));
+  else localStorage.removeItem('c26u');
 }
 
-async function loadPredsFromSupabase(user) {
-  if(!supa || !user) return;
+// ================= SUPABASE: RESULTADOS =================
+async function syncResultToSupabase(id, h, a) {
+  if(!supa) return false;
+  setSyncStatus('sv', 'Salvando...');
   try {
-    const { data, error } = await supa.from('palpites').select('match_id,placar_casa,placar_visitante').eq('user_name', user);
+    const { error } = await supa.from('partidas').upsert({ id: id, placar_casa: h, placar_visitante: a }, { onConflict: 'id' });
     if(error) throw error;
-    if(data && data.length) {
-      if(!ST.preds[user]) ST.preds[user] = {};
-      data.forEach(p => { ST.preds[user][p.match_id] = { h: p.placar_casa, a: p.placar_visitante }; });
+    setSyncStatus('ok', 'BD ✓');
+    setTimeout(() => setSyncStatus('ok', 'BD ok'), 1500);
+    return true;
+  } catch(e) { console.error(e); setSyncStatus('er', 'Erro BD'); toast('❌ Erro ao salvar resultado'); return false; }
+}
+
+async function loadResultsFromSupabase() {
+  if(!supa) return;
+  try {
+    const { data, error } = await supa.from('partidas').select('id,placar_casa,placar_visitante');
+    if(error) throw error;
+    if(data) {
+      data.forEach(r => {
+        if(r.placar_casa !== null && r.placar_visitante !== null)
+          ST.results[r.id] = { h: r.placar_casa, a: r.placar_visitante };
+        else delete ST.results[r.id];
+      });
       save();
+      renderTabela();
       if(document.getElementById('panel-palpites').classList.contains('on')) renderPalpites();
+      toast('🏆 Resultados sincronizados com BD');
     }
-  } catch(e) { toast('⚠️ Erro ao carregar palpites do servidor'); }
+  } catch(e) { toast('⚠️ Erro ao carregar resultados'); }
+}
+
+// ================= SUPABASE: PALPITES =================
+async function syncPredToSupabase(userName, matchId, h, a) {
+  if(!supa || !userName) return false;
+  try {
+    const { error } = await supa.from('palpites').upsert(
+      { user_name: userName, match_id: matchId, placar_casa: h, placar_visitante: a, updated_at: new Date() },
+      { onConflict: 'user_name,match_id' }
+    );
+    if(error) throw error;
+    return true;
+  } catch(e) { console.warn(e); toast('⚠️ Erro ao salvar palpite no BD'); return false; }
+}
+
+async function loadPredictionsFromDB(userName) {
+  if(!supa || !userName) return;
+  try {
+    const { data, error } = await supa.from('palpites').select('match_id,placar_casa,placar_visitante').eq('user_name', userName);
+    if(error) throw error;
+    if(!ST.preds[userName]) ST.preds[userName] = {};
+    data.forEach(p => { ST.preds[userName][p.match_id] = { h: p.placar_casa, a: p.placar_visitante }; });
+    save();
+    if(document.getElementById('panel-palpites').classList.contains('on')) renderPalpites();
+    renderRanking();
+    toast(`📥 Palpites de ${userName} carregados do BD`);
+  } catch(e) { toast('❌ Falha ao buscar palpites'); }
 }
 
 async function saveAllPredictionsToDB() {
   if(!ST.user) { toast('Faça login primeiro'); return; }
   const allInputs = document.querySelectorAll('#panel-palpites .sinp');
-  let updated=0;
+  let updated = 0, errors = 0;
+  setSyncStatus('sv', 'Enviando...');
   for(let inp of allInputs) {
     const mid = parseInt(inp.dataset.pmid);
     if(isNaN(mid)) continue;
@@ -211,82 +261,310 @@ async function saveAllPredictionsToDB() {
     const aInp = row.querySelector('[data-side="a"]');
     const hv = hInp.value.trim(), av = aInp.value.trim();
     if(hv !== '' && av !== '') {
-      const h = Math.max(0,parseInt(hv)||0), a = Math.max(0,parseInt(av)||0);
-      setPredLocal(mid, h, a);
-      await syncPredToSupabase(ST.user.name, mid, h, a);
-      updated++;
-      // atualiza pontuação visual
-      const res = getRes(mid), pp = calcPts({h,a},res);
+      const h = Math.max(0, parseInt(hv)||0), a = Math.max(0, parseInt(av)||0);
+      // salva local + remoto
+      if(!ST.preds[ST.user.name]) ST.preds[ST.user.name] = {};
+      ST.preds[ST.user.name][mid] = { h, a };
+      const ok = await syncPredToSupabase(ST.user.name, mid, h, a);
+      if(ok) updated++; else errors++;
+      // atualiza badge de pontos
+      const res = getRes(mid);
+      const pp = calcPts({h,a}, res);
       const badge = row.querySelector('.pts-badge');
       if(badge){ badge.className='pts-badge '+pClass(pp); badge.textContent=pLabel(pp); }
-    } else if(hv==='' && av==='') {
-      delPredLocal(mid);
+    } else if(hv === '' && av === '') {
+      // remove palpite se ambos vazios
+      if(ST.preds[ST.user.name] && ST.preds[ST.user.name][mid]) delete ST.preds[ST.user.name][mid];
       if(supa) await supa.from('palpites').delete().eq('user_name', ST.user.name).eq('match_id', mid);
     }
   }
-  toast(`💾 ${updated} palpites salvos no banco de dados!`);
+  save();
+  setSyncStatus('ok', 'BD ok');
+  toast(`💾 ${updated} palpites salvos no BD${errors ? ` (${errors} erros)` : ''}`);
   renderRanking();
 }
 
-function checkDbConnection() {
-  if(!supa) { toast('❌ Supabase não configurado'); setSyncStatus('er','Sem BD'); return; }
-  setSyncStatus('sv','Testando...');
-  supa.from('partidas').select('id', { head: true, count: 'exact' }).then(({ error, count }) => {
-    if(error) { toast('Falha na conexão'); setSyncStatus('er','BD off'); } 
-    else { toast(`✅ Conectado! ${count} jogos`); setSyncStatus('ok','BD ok'); }
-  }).catch(()=>{ toast('Erro de rede'); setSyncStatus('er','Erro'); });
+async function refreshPredictionsFromDB() {
+  if(!ST.user) { toast('Nenhum usuário logado'); return; }
+  await loadPredictionsFromDB(ST.user.name);
 }
 
-function calcPts(pred,res) { if(!res) return null; if(!pred) return 0; const {h:ph,a:pa}=pred,{h:rh,a:ra}=res; if(ph===rh&&pa===ra) return 10; const po=ph>pa?'H':ph<pa?'A':'D', ro=rh>ra?'H':rh<ra?'A':'D'; return po===ro?5:0; }
-const pClass = p => p===null?'ptsnull':p===10?'pts10':p===5?'pts5':'pts0';
-const pLabel = p => p===null?'—':p>0?'+'+p:'0';
+// ================= AUXILIARES =================
+function getRes(id) { return ST.results[id] || null; }
+function calcPts(pred, res) {
+  if(!res) return null;
+  if(!pred) return 0;
+  const {h:ph, a:pa} = pred, {h:rh, a:ra} = res;
+  if(ph === rh && pa === ra) return 10;
+  const po = ph>pa ? 'H' : ph<pa ? 'A' : 'D';
+  const ro = rh>ra ? 'H' : rh<ra ? 'A' : 'D';
+  return po === ro ? 5 : 0;
+}
+const pClass = p => p===null ? 'ptsnull' : p===10 ? 'pts10' : p===5 ? 'pts5' : 'pts0';
+const pLabel = p => p===null ? '—' : p>0 ? '+' + p : '0';
 
-// Grupos e partidas (mesma base)
-const GROUPS = { A:['México','África do Sul','Coreia do Sul','República Tcheca'], B:['Canadá','Catar','Suíça','Bósnia e Herzegovina'], C:['Brasil','Marrocos','Haiti','Escócia'], D:['Estados Unidos','Paraguai','Austrália','Turquia'], E:['Alemanha','Curaçao','Costa do Marfim','Equador'], F:['Holanda','Japão','Suécia','Tunísia'], G:['Bélgica','Egito','Irã','Nova Zelândia'], H:['Espanha','Cabo Verde','Arábia Saudita','Uruguai'], I:['França','Senegal','Iraque','Noruega'], J:['Argentina','Argélia','Áustria','Jordânia'], K:['Portugal','RD do Congo','Uzbequistão','Colômbia'], L:['Inglaterra','Croácia','Gana','Panamá'] };
-const MATCHES = [ {id:1,g:'A',r:1,dt:'11/06',tm:'16:00',h:'México',a:'África do Sul'},{id:2,g:'A',r:1,dt:'11/06',tm:'23:00',h:'Coreia do Sul',a:'República Tcheca'},{id:3,g:'A',r:2,dt:'18/06',tm:'13:00',h:'República Tcheca',a:'África do Sul'},{id:4,g:'A',r:2,dt:'18/06',tm:'22:00',h:'México',a:'Coreia do Sul'},{id:5,g:'A',r:3,dt:'24/06',tm:'22:00',h:'África do Sul',a:'Coreia do Sul'},{id:6,g:'A',r:3,dt:'24/06',tm:'22:00',h:'República Tcheca',a:'México'},
-{id:7,g:'B',r:1,dt:'12/06',tm:'16:00',h:'Canadá',a:'Bósnia e Herzegovina'},{id:8,g:'B',r:1,dt:'13/06',tm:'16:00',h:'Catar',a:'Suíça'},{id:9,g:'B',r:2,dt:'18/06',tm:'16:00',h:'Suíça',a:'Bósnia e Herzegovina'},{id:10,g:'B',r:2,dt:'18/06',tm:'19:00',h:'Canadá',a:'Catar'},{id:11,g:'B',r:3,dt:'24/06',tm:'16:00',h:'Suíça',a:'Canadá'},{id:12,g:'B',r:3,dt:'24/06',tm:'16:00',h:'Bósnia e Herzegovina',a:'Catar'},
-{id:13,g:'C',r:1,dt:'13/06',tm:'19:00',h:'Brasil',a:'Marrocos'},{id:14,g:'C',r:1,dt:'13/06',tm:'22:00',h:'Haiti',a:'Escócia'},{id:15,g:'C',r:2,dt:'19/06',tm:'19:00',h:'Escócia',a:'Marrocos'},{id:16,g:'C',r:2,dt:'19/06',tm:'21:30',h:'Brasil',a:'Haiti'},{id:17,g:'C',r:3,dt:'24/06',tm:'19:00',h:'Escócia',a:'Brasil'},{id:18,g:'C',r:3,dt:'24/06',tm:'19:00',h:'Marrocos',a:'Haiti'},
-{id:19,g:'D',r:1,dt:'12/06',tm:'22:00',h:'Estados Unidos',a:'Paraguai'},{id:20,g:'D',r:1,dt:'13/06',tm:'01:00',h:'Austrália',a:'Turquia'},{id:21,g:'D',r:2,dt:'20/06',tm:'01:00',h:'Turquia',a:'Paraguai'},{id:22,g:'D',r:2,dt:'19/06',tm:'16:00',h:'Estados Unidos',a:'Austrália'},{id:23,g:'D',r:3,dt:'25/06',tm:'23:00',h:'Turquia',a:'Estados Unidos'},{id:24,g:'D',r:3,dt:'25/06',tm:'23:00',h:'Paraguai',a:'Austrália'},
-{id:25,g:'E',r:1,dt:'14/06',tm:'14:00',h:'Alemanha',a:'Curaçao'},{id:26,g:'E',r:1,dt:'14/06',tm:'20:00',h:'Costa do Marfim',a:'Equador'},{id:27,g:'E',r:2,dt:'20/06',tm:'17:00',h:'Alemanha',a:'Costa do Marfim'},{id:28,g:'E',r:2,dt:'20/06',tm:'21:00',h:'Equador',a:'Curaçao'},{id:29,g:'E',r:3,dt:'25/06',tm:'17:00',h:'Equador',a:'Alemanha'},{id:30,g:'E',r:3,dt:'25/06',tm:'17:00',h:'Curaçao',a:'Costa do Marfim'},
-{id:31,g:'F',r:1,dt:'14/06',tm:'17:00',h:'Holanda',a:'Japão'},{id:32,g:'F',r:1,dt:'14/06',tm:'23:00',h:'Suécia',a:'Tunísia'},{id:33,g:'F',r:2,dt:'20/06',tm:'14:00',h:'Holanda',a:'Suécia'},{id:34,g:'F',r:2,dt:'21/06',tm:'01:00',h:'Tunísia',a:'Japão'},{id:35,g:'F',r:3,dt:'25/06',tm:'20:00',h:'Japão',a:'Suécia'},{id:36,g:'F',r:3,dt:'25/06',tm:'20:00',h:'Tunísia',a:'Holanda'},
-{id:37,g:'G',r:1,dt:'15/06',tm:'16:00',h:'Bélgica',a:'Egito'},{id:38,g:'G',r:1,dt:'15/06',tm:'22:00',h:'Irã',a:'Nova Zelândia'},{id:39,g:'G',r:2,dt:'21/06',tm:'16:00',h:'Bélgica',a:'Irã'},{id:40,g:'G',r:2,dt:'21/06',tm:'22:00',h:'Nova Zelândia',a:'Egito'},{id:41,g:'G',r:3,dt:'26/06',tm:'00:00',h:'Egito',a:'Irã'},{id:42,g:'G',r:3,dt:'26/06',tm:'00:00',h:'Nova Zelândia',a:'Bélgica'},
-{id:43,g:'H',r:1,dt:'15/06',tm:'13:00',h:'Espanha',a:'Cabo Verde'},{id:44,g:'H',r:1,dt:'15/06',tm:'19:00',h:'Arábia Saudita',a:'Uruguai'},{id:45,g:'H',r:2,dt:'21/06',tm:'13:00',h:'Espanha',a:'Arábia Saudita'},{id:46,g:'H',r:2,dt:'21/06',tm:'19:00',h:'Uruguai',a:'Cabo Verde'},{id:47,g:'H',r:3,dt:'26/06',tm:'21:00',h:'Cabo Verde',a:'Arábia Saudita'},{id:48,g:'H',r:3,dt:'26/06',tm:'21:00',h:'Uruguai',a:'Espanha'},
-{id:49,g:'I',r:1,dt:'16/06',tm:'16:00',h:'França',a:'Senegal'},{id:50,g:'I',r:1,dt:'16/06',tm:'19:00',h:'Iraque',a:'Noruega'},{id:51,g:'I',r:2,dt:'22/06',tm:'18:00',h:'França',a:'Iraque'},{id:52,g:'I',r:2,dt:'22/06',tm:'21:00',h:'Noruega',a:'Senegal'},{id:53,g:'I',r:3,dt:'26/06',tm:'16:00',h:'Noruega',a:'França'},{id:54,g:'I',r:3,dt:'26/06',tm:'16:00',h:'Senegal',a:'Iraque'},
-{id:55,g:'J',r:1,dt:'16/06',tm:'22:00',h:'Argentina',a:'Argélia'},{id:56,g:'J',r:1,dt:'17/06',tm:'01:00',h:'Áustria',a:'Jordânia'},{id:57,g:'J',r:2,dt:'22/06',tm:'14:00',h:'Argentina',a:'Áustria'},{id:58,g:'J',r:2,dt:'23/06',tm:'00:00',h:'Jordânia',a:'Argélia'},{id:59,g:'J',r:3,dt:'27/06',tm:'23:00',h:'Argélia',a:'Áustria'},{id:60,g:'J',r:3,dt:'27/06',tm:'23:00',h:'Jordânia',a:'Argentina'},
-{id:61,g:'K',r:1,dt:'17/06',tm:'14:00',h:'Portugal',a:'RD do Congo'},{id:62,g:'K',r:1,dt:'17/06',tm:'23:00',h:'Uzbequistão',a:'Colômbia'},{id:63,g:'K',r:2,dt:'23/06',tm:'14:00',h:'Portugal',a:'Uzbequistão'},{id:64,g:'K',r:2,dt:'23/06',tm:'23:00',h:'Colômbia',a:'RD do Congo'},{id:65,g:'K',r:3,dt:'27/06',tm:'20:30',h:'Colômbia',a:'Portugal'},{id:66,g:'K',r:3,dt:'27/06',tm:'20:30',h:'RD do Congo',a:'Uzbequistão'},
-{id:67,g:'L',r:1,dt:'17/06',tm:'17:00',h:'Inglaterra',a:'Croácia'},{id:68,g:'L',r:1,dt:'17/06',tm:'20:00',h:'Gana',a:'Panamá'},{id:69,g:'L',r:2,dt:'23/06',tm:'17:00',h:'Inglaterra',a:'Gana'},{id:70,g:'L',r:2,dt:'23/06',tm:'20:00',h:'Panamá',a:'Croácia'},{id:71,g:'L',r:3,dt:'27/06',tm:'18:00',h:'Panamá',a:'Inglaterra'},{id:72,g:'L',r:3,dt:'27/06',tm:'19:00',h:'Croácia',a:'Gana'} ];
-
+// ================= DADOS ESTÁTICOS (GRUPOS + PARTIDAS) =================
+const GROUPS = {
+  A:['México','África do Sul','Coreia do Sul','República Tcheca'],
+  B:['Canadá','Catar','Suíça','Bósnia e Herzegovina'],
+  C:['Brasil','Marrocos','Haiti','Escócia'],
+  D:['Estados Unidos','Paraguai','Austrália','Turquia'],
+  E:['Alemanha','Curaçao','Costa do Marfim','Equador'],
+  F:['Holanda','Japão','Suécia','Tunísia'],
+  G:['Bélgica','Egito','Irã','Nova Zelândia'],
+  H:['Espanha','Cabo Verde','Arábia Saudita','Uruguai'],
+  I:['França','Senegal','Iraque','Noruega'],
+  J:['Argentina','Argélia','Áustria','Jordânia'],
+  K:['Portugal','RD do Congo','Uzbequistão','Colômbia'],
+  L:['Inglaterra','Croácia','Gana','Panamá']
+};
+const MATCHES = [
+  {id:1,g:'A',r:1,dt:'11/06',tm:'16:00',h:'México',a:'África do Sul'},{id:2,g:'A',r:1,dt:'11/06',tm:'23:00',h:'Coreia do Sul',a:'República Tcheca'},{id:3,g:'A',r:2,dt:'18/06',tm:'13:00',h:'República Tcheca',a:'África do Sul'},{id:4,g:'A',r:2,dt:'18/06',tm:'22:00',h:'México',a:'Coreia do Sul'},{id:5,g:'A',r:3,dt:'24/06',tm:'22:00',h:'África do Sul',a:'Coreia do Sul'},{id:6,g:'A',r:3,dt:'24/06',tm:'22:00',h:'República Tcheca',a:'México'},
+  {id:7,g:'B',r:1,dt:'12/06',tm:'16:00',h:'Canadá',a:'Bósnia e Herzegovina'},{id:8,g:'B',r:1,dt:'13/06',tm:'16:00',h:'Catar',a:'Suíça'},{id:9,g:'B',r:2,dt:'18/06',tm:'16:00',h:'Suíça',a:'Bósnia e Herzegovina'},{id:10,g:'B',r:2,dt:'18/06',tm:'19:00',h:'Canadá',a:'Catar'},{id:11,g:'B',r:3,dt:'24/06',tm:'16:00',h:'Suíça',a:'Canadá'},{id:12,g:'B',r:3,dt:'24/06',tm:'16:00',h:'Bósnia e Herzegovina',a:'Catar'},
+  {id:13,g:'C',r:1,dt:'13/06',tm:'19:00',h:'Brasil',a:'Marrocos'},{id:14,g:'C',r:1,dt:'13/06',tm:'22:00',h:'Haiti',a:'Escócia'},{id:15,g:'C',r:2,dt:'19/06',tm:'19:00',h:'Escócia',a:'Marrocos'},{id:16,g:'C',r:2,dt:'19/06',tm:'21:30',h:'Brasil',a:'Haiti'},{id:17,g:'C',r:3,dt:'24/06',tm:'19:00',h:'Escócia',a:'Brasil'},{id:18,g:'C',r:3,dt:'24/06',tm:'19:00',h:'Marrocos',a:'Haiti'},
+  {id:19,g:'D',r:1,dt:'12/06',tm:'22:00',h:'Estados Unidos',a:'Paraguai'},{id:20,g:'D',r:1,dt:'13/06',tm:'01:00',h:'Austrália',a:'Turquia'},{id:21,g:'D',r:2,dt:'20/06',tm:'01:00',h:'Turquia',a:'Paraguai'},{id:22,g:'D',r:2,dt:'19/06',tm:'16:00',h:'Estados Unidos',a:'Austrália'},{id:23,g:'D',r:3,dt:'25/06',tm:'23:00',h:'Turquia',a:'Estados Unidos'},{id:24,g:'D',r:3,dt:'25/06',tm:'23:00',h:'Paraguai',a:'Austrália'},
+  {id:25,g:'E',r:1,dt:'14/06',tm:'14:00',h:'Alemanha',a:'Curaçao'},{id:26,g:'E',r:1,dt:'14/06',tm:'20:00',h:'Costa do Marfim',a:'Equador'},{id:27,g:'E',r:2,dt:'20/06',tm:'17:00',h:'Alemanha',a:'Costa do Marfim'},{id:28,g:'E',r:2,dt:'20/06',tm:'21:00',h:'Equador',a:'Curaçao'},{id:29,g:'E',r:3,dt:'25/06',tm:'17:00',h:'Equador',a:'Alemanha'},{id:30,g:'E',r:3,dt:'25/06',tm:'17:00',h:'Curaçao',a:'Costa do Marfim'},
+  {id:31,g:'F',r:1,dt:'14/06',tm:'17:00',h:'Holanda',a:'Japão'},{id:32,g:'F',r:1,dt:'14/06',tm:'23:00',h:'Suécia',a:'Tunísia'},{id:33,g:'F',r:2,dt:'20/06',tm:'14:00',h:'Holanda',a:'Suécia'},{id:34,g:'F',r:2,dt:'21/06',tm:'01:00',h:'Tunísia',a:'Japão'},{id:35,g:'F',r:3,dt:'25/06',tm:'20:00',h:'Japão',a:'Suécia'},{id:36,g:'F',r:3,dt:'25/06',tm:'20:00',h:'Tunísia',a:'Holanda'},
+  {id:37,g:'G',r:1,dt:'15/06',tm:'16:00',h:'Bélgica',a:'Egito'},{id:38,g:'G',r:1,dt:'15/06',tm:'22:00',h:'Irã',a:'Nova Zelândia'},{id:39,g:'G',r:2,dt:'21/06',tm:'16:00',h:'Bélgica',a:'Irã'},{id:40,g:'G',r:2,dt:'21/06',tm:'22:00',h:'Nova Zelândia',a:'Egito'},{id:41,g:'G',r:3,dt:'26/06',tm:'00:00',h:'Egito',a:'Irã'},{id:42,g:'G',r:3,dt:'26/06',tm:'00:00',h:'Nova Zelândia',a:'Bélgica'},
+  {id:43,g:'H',r:1,dt:'15/06',tm:'13:00',h:'Espanha',a:'Cabo Verde'},{id:44,g:'H',r:1,dt:'15/06',tm:'19:00',h:'Arábia Saudita',a:'Uruguai'},{id:45,g:'H',r:2,dt:'21/06',tm:'13:00',h:'Espanha',a:'Arábia Saudita'},{id:46,g:'H',r:2,dt:'21/06',tm:'19:00',h:'Uruguai',a:'Cabo Verde'},{id:47,g:'H',r:3,dt:'26/06',tm:'21:00',h:'Cabo Verde',a:'Arábia Saudita'},{id:48,g:'H',r:3,dt:'26/06',tm:'21:00',h:'Uruguai',a:'Espanha'},
+  {id:49,g:'I',r:1,dt:'16/06',tm:'16:00',h:'França',a:'Senegal'},{id:50,g:'I',r:1,dt:'16/06',tm:'19:00',h:'Iraque',a:'Noruega'},{id:51,g:'I',r:2,dt:'22/06',tm:'18:00',h:'França',a:'Iraque'},{id:52,g:'I',r:2,dt:'22/06',tm:'21:00',h:'Noruega',a:'Senegal'},{id:53,g:'I',r:3,dt:'26/06',tm:'16:00',h:'Noruega',a:'França'},{id:54,g:'I',r:3,dt:'26/06',tm:'16:00',h:'Senegal',a:'Iraque'},
+  {id:55,g:'J',r:1,dt:'16/06',tm:'22:00',h:'Argentina',a:'Argélia'},{id:56,g:'J',r:1,dt:'17/06',tm:'01:00',h:'Áustria',a:'Jordânia'},{id:57,g:'J',r:2,dt:'22/06',tm:'14:00',h:'Argentina',a:'Áustria'},{id:58,g:'J',r:2,dt:'23/06',tm:'00:00',h:'Jordânia',a:'Argélia'},{id:59,g:'J',r:3,dt:'27/06',tm:'23:00',h:'Argélia',a:'Áustria'},{id:60,g:'J',r:3,dt:'27/06',tm:'23:00',h:'Jordânia',a:'Argentina'},
+  {id:61,g:'K',r:1,dt:'17/06',tm:'14:00',h:'Portugal',a:'RD do Congo'},{id:62,g:'K',r:1,dt:'17/06',tm:'23:00',h:'Uzbequistão',a:'Colômbia'},{id:63,g:'K',r:2,dt:'23/06',tm:'14:00',h:'Portugal',a:'Uzbequistão'},{id:64,g:'K',r:2,dt:'23/06',tm:'23:00',h:'Colômbia',a:'RD do Congo'},{id:65,g:'K',r:3,dt:'27/06',tm:'20:30',h:'Colômbia',a:'Portugal'},{id:66,g:'K',r:3,dt:'27/06',tm:'20:30',h:'RD do Congo',a:'Uzbequistão'},
+  {id:67,g:'L',r:1,dt:'17/06',tm:'17:00',h:'Inglaterra',a:'Croácia'},{id:68,g:'L',r:1,dt:'17/06',tm:'20:00',h:'Gana',a:'Panamá'},{id:69,g:'L',r:2,dt:'23/06',tm:'17:00',h:'Inglaterra',a:'Gana'},{id:70,g:'L',r:2,dt:'23/06',tm:'20:00',h:'Panamá',a:'Croácia'},{id:71,g:'L',r:3,dt:'27/06',tm:'18:00',h:'Panamá',a:'Inglaterra'},{id:72,g:'L',r:3,dt:'27/06',tm:'19:00',h:'Croácia',a:'Gana'}
+];
 const FC = { 'Brasil':'br','Estados Unidos':'us','Canadá':'ca','México':'mx','Alemanha':'de','França':'fr','Argentina':'ar','Portugal':'pt','Inglaterra':'gb-eng','Espanha':'es','Holanda':'nl','Bélgica':'be','Croácia':'hr','Marrocos':'ma','Senegal':'sn','Egito':'eg','Japão':'jp','Coreia do Sul':'kr','Austrália':'au','Suíça':'ch','Catar':'qa','Paraguai':'py','Turquia':'tr','Gana':'gh','Panamá':'pa','Escócia':'gb-sct','Haiti':'ht','Cabo Verde':'cv','Uruguai':'uy','Colômbia':'co','Equador':'ec','Costa do Marfim':'ci','Argélia':'dz','Áustria':'at','Jordânia':'jo','RD do Congo':'cd','Uzbequistão':'uz','Iraque':'iq','Noruega':'no','Suécia':'se','Tunísia':'tn','Arábia Saudita':'sa','Curaçao':'cw','Bósnia e Herzegovina':'ba','Nova Zelândia':'nz','República Tcheca':'cz','África do Sul':'za' };
 function fi(t,w=24){ const c=FC[t]; if(!c) return `<span style="display:inline-block;width:${w}px;height:${w*.66}px;background:rgba(255,255,255,.1);border-radius:2px"></span>`; return `<span class="fi fi-${c}" style="display:inline-block;width:${w}px;height:${Math.round(w*.66)}px;border-radius:2px;"></span>`; }
-function escH(s){ return String(s).replace(/[&<>]/g,function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+function escH(s){ return String(s).replace(/[&<>]/g, m => m==='&' ? '&amp;' : m==='<' ? '&lt;' : '&gt;'); }
 
-function renderPalpites() {
-  const el=document.getElementById('panel-palpites'); if(!ST.user){ el.innerHTML=`<div class="empty"><span class="empty-ico">🎯</span><h2 class="empty-h">FAÇA SEUS PALPITES</h2><p class="empty-p">Entre no bolão para palpitar</p><button class="btn-join" onclick="openLogin()">⚽ Entrar</button></div>`; return; }
-  let html=`<div class="sec-h" style="justify-content:space-between"><span>🎯 PALPITES — ${escH(ST.user.name)}</span><button class="btn-save-all" id="btnSaveAllPredictions">💾 Salvar todos no BD</button></div><div class="pts-legend"><span class="pleg"><span class="pleg-dot" style="background:var(--gold)"></span>Exato 10 pts</span><span class="pleg"><span class="pleg-dot" style="background:var(--green)"></span>Resultado 5 pts</span><span class="pleg"><span class="pleg-dot" style="background:var(--red)"></span>Erro 0 pts</span></div><div class="gg">`;
-  Object.keys(GROUPS).forEach(g=>{ const rounds={}; MATCHES.filter(m=>m.g===g).forEach(m=>{if(!rounds[m.r])rounds[m.r]=[]; rounds[m.r].push(m);}); let rows=''; Object.entries(rounds).forEach(([rn,ms])=>{ rows+=`<div class="round-lbl">Rodada ${rn}</div>`; ms.forEach(m=>{ const pred=getPredLocal(m.id), res=getRes(m.id), pp=calcPts(pred,res); const hv=pred?pred.h:''; const ofcl=res?`<div class="ofcl">Oficial<strong>${res.h}:${res.a}</strong></div>`:`<div class="ofcl" style="color:var(--dim)">Aguardando</div>`; rows+=`<div class="pred-row"><div class="m-dt"><div class="m-d">${m.dt}</div><div class="m-t">${m.tm}</div></div><div class="m-home">${fi(m.h,22)}<span class="t-name">${m.h}</span></div><div class="sz" style="flex-direction:column;gap:2px"><div style="display:flex;gap:3px"><input type="number" class="sinp" data-pmid="${m.id}" data-side="h" value="${hv}" min="0" max="30" inputmode="numeric"><span class="ssep">:</span><input type="number" class="sinp" data-pmid="${m.id}" data-side="a" value="${pred?pred.a:''}" min="0" max="30" inputmode="numeric"></div>${ofcl}</div><div class="m-away"><span class="t-name">${m.a}</span>${fi(m.a,22)}</div><div class="pts-badge ${pClass(pp)}">${pLabel(pp)}</div></div>`; }); }); html+=`<div class="gc"><div class="gc-head"><span class="gc-ttl">GRUPO ${g}</span></div><div class="rounds-section">${rows}</div></div>`; }); html+='</div>'; el.innerHTML=html;
-  document.getElementById('btnSaveAllPredictions')?.addEventListener('click', saveAllPredictionsToDB);
-  let pdeb={}; document.querySelectorAll('#panel-palpites .sinp').forEach(inp=>{ inp.addEventListener('input',e=>{ const mid=parseInt(e.target.dataset.pmid); clearTimeout(pdeb[mid]); pdeb[mid]=setTimeout(()=>{ const row=e.target.closest('.pred-row'); const hI=row.querySelector('[data-side="h"]'), aI=row.querySelector('[data-side="a"]'); const hv=hI.value.trim(), av=aI.value.trim(); if(hv===''&&av===''){ delPredLocal(mid); if(supa) supa.from('palpites').delete().eq('user_name',ST.user.name).eq('match_id',mid); } else if(hv!==''&&av!==''){ const h=Math.max(0,parseInt(hv)||0), a=Math.max(0,parseInt(av)||0); hI.value=h; aI.value=a; setPredLocal(mid,h,a); syncPredToSupabase(ST.user.name,mid,h,a); const res=getRes(mid), pp=calcPts({h,a},res); const badge=row.querySelector('.pts-badge'); if(badge){badge.className='pts-badge '+pClass(pp);badge.textContent=pLabel(pp);} toast('💾 Palpite salvo (automático)'); } },500); }); });
+// ================= RENDER TABELA =================
+function calcStandings(g){
+  let st = {}; GROUPS[g].forEach(t=>{ st[t]={pts:0,j:0,v:0,e:0,d:0,gp:0,gc:0}; });
+  MATCHES.filter(m=>m.g===g).forEach(m=>{ let r=getRes(m.id); if(!r) return; let h=r.h, a=r.a;
+    st[m.h].j++; st[m.a].j++; st[m.h].gp+=h; st[m.h].gc+=a; st[m.a].gp+=a; st[m.a].gc+=h;
+    if(h>a){ st[m.h].v++; st[m.h].pts+=3; st[m.a].d++; }
+    else if(a>h){ st[m.a].v++; st[m.a].pts+=3; st[m.h].d++; }
+    else{ st[m.h].e++; st[m.a].e++; st[m.h].pts++; st[m.a].pts++; }
+  });
+  return Object.entries(st).map(([t,s])=>({t, ...s, sg:s.gp-s.gc})).sort((a,b)=>b.pts-a.pts||(b.sg-a.sg)||b.gp-a.gp||a.t.localeCompare(b.t));
 }
-function getPredLocal(id){ return ST.user ? (ST.preds[ST.user.name]||{})[id]||null : null; }
+function renderTabela(){
+  let out = '<div class="br-hero"><span class="br-hero-flag">🇧🇷</span><div class="br-hero-title">VAI BRASIL!</div><div class="br-hero-sub">Grupo C</div></div><div class="gg">';
+  Object.keys(GROUPS).forEach(g=>{
+    let st = calcStandings(g);
+    let stRows = st.map((row,i)=>`<tr><td><span class="pb pb${i+1>4?4:i+1}">${i+1}</span></td><td><div class="team-cell">${fi(row.t,24)}<span>${row.t}</span></div></td><td class="pts-v">${row.pts}</td><td>${row.j}</td><td>${row.v}</td><td>${row.e}</td><td>${row.d}</td><td>${row.gp}</td><td>${row.gc}</td><td class="${row.sg>0?'sg-p':row.sg<0?'sg-n':''}">${row.sg>0?'+'+row.sg:row.sg}</td></tr>`).join('');
+    let rounds = {};
+    MATCHES.filter(m=>m.g===g).forEach(m=>{ if(!rounds[m.r]) rounds[m.r]=[]; rounds[m.r].push(m); });
+    let matchRows = '';
+    Object.entries(rounds).forEach(([rn,ms])=>{
+      matchRows += `<div class="round-lbl">Rodada ${rn}</div>`;
+      ms.forEach(m=>{
+        let res = getRes(m.id);
+        let scoreHtml = ST.admin ?
+          `<div class="sz"><input type="number" class="sinp" data-mid="${m.id}" data-side="h" value="${res?res.h:''}" min="0" max="30" inputmode="numeric"><span class="ssep">:</span><input type="number" class="sinp" data-mid="${m.id}" data-side="a" value="${res?res.a:''}" min="0" max="30" inputmode="numeric"></div>` :
+          (res ? `<div class="sdsp"><span class="${res.h>res.a?'sw':res.h<res.a?'sl':'sd'}">${res.h}</span><span>:</span><span class="${res.a>res.h?'sw':res.a<res.h?'sl':'sd'}">${res.a}</span></div>` : `<div class="sdsp novs">vs</div>`);
+        matchRows += `<div class="mr"><div class="m-dt"><div class="m-d">${m.dt}</div><div class="m-t">${m.tm}</div></div><div class="m-home">${fi(m.h,22)}<span class="t-name">${m.h}</span></div>${scoreHtml}<div class="m-away"><span class="t-name">${m.a}</span>${fi(m.a,22)}</div></div>`;
+      });
+    });
+    out += `<div class="gc"><div class="gc-head"><span class="gc-ttl">GRUPO ${g}</span></div><table class="stt"><thead><tr><th>#</th><th>Seleção</th><th>P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr></thead><tbody>${stRows}</tbody></table><div class="rounds-section">${matchRows}</div></div>`;
+  });
+  out += '</div>';
+  document.getElementById('panel-tabela').innerHTML = out;
+  if(ST.admin) attachAdminListeners();
+}
+function attachAdminListeners(){
+  document.querySelectorAll('#panel-tabela .sinp').forEach(inp=>{
+    inp.addEventListener('input', e => {
+      let mid = parseInt(e.target.dataset.mid);
+      clearTimeout(window._resDeb?.[mid]);
+      window._resDeb = window._resDeb || {};
+      window._resDeb[mid] = setTimeout(async () => {
+        let row = e.target.closest('.mr');
+        let hI = row.querySelector('[data-side="h"]'), aI = row.querySelector('[data-side="a"]');
+        let hv = hI.value.trim(), av = aI.value.trim();
+        if(hv === '' && av === '') {
+          delete ST.results[mid];
+          save();
+          if(supa) await supa.from('partidas').delete().eq('id', mid);
+        } else if(hv !== '' && av !== '') {
+          let h = Math.max(0, parseInt(hv)||0), a = Math.max(0, parseInt(av)||0);
+          ST.results[mid] = { h, a };
+          save();
+          await syncResultToSupabase(mid, h, a);
+        }
+        renderTabela();
+        if(document.getElementById('panel-palpites').classList.contains('on')) renderPalpites();
+        renderRanking();
+      }, 600);
+    });
+  });
+}
 
-function renderRanking(){ let allU=[...new Set([...Object.keys(ST.preds),...(ST.user?[ST.user.name]:[])])]; let lb=allU.map(u=>{ let total=0,ct=0; MATCHES.forEach(m=>{let pr=(ST.preds[u]||{})[m.id]; if(pr){ct++;let pp=calcPts(pr,getRes(m.id)); if(pp!==null)total+=pp;}}); return{u,total,ct}; }).sort((a,b)=>b.total-a.total||b.ct-a.ct); let rows=lb.map((x,i)=>(`<div class="rk-row${ST.user&&x.u===ST.user.name?' me':''}"><div class="rk-pos">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div class="rk-av">${x.u[0].toUpperCase()}</div><div class="rk-name">${escH(x.u)}${ST.user&&x.u===ST.user.name?'<span class="rk-me">você</span>':''}</div><div><div class="rk-pts">${x.total}</div><div class="rk-sub">${x.ct} palpite(s)</div></div></div>`)).join(''); document.getElementById('panel-ranking').innerHTML=`<div class="sec-h">🏅 RANKING</div><div class="rk-card">${rows||'<div style="padding:24px;text-align:center">Nenhum palpite</div>'}</div>`; }
-function renderTabela(){ let out='<div class="br-hero"><span class="br-hero-flag">🇧🇷</span><div class="br-hero-title">VAI BRASIL!</div><div class="br-hero-sub">Grupo C</div></div><div class="gg">'; Object.keys(GROUPS).forEach(g=>{ let st=calcStandings(g); let stRows=st.map((row,i)=>(`<tr><td><span class="pb pb${i+1>4?4:i+1}">${i+1}</span></td><td><div class="team-cell">${fi(row.t,24)}<span>${row.t}</span></div></td><td class="pts-v">${row.pts}</td><td>${row.j}</td><td>${row.v}</td><td>${row.e}</td><td>${row.d}</td><td>${row.gp}</td><td>${row.gc}</td><td>${row.sg>0?'+'+row.sg:row.sg}</td></tr>`)).join(''); let rounds={}; MATCHES.filter(m=>m.g===g).forEach(m=>{if(!rounds[m.r])rounds[m.r]=[]; rounds[m.r].push(m);}); let matchRows=''; Object.entries(rounds).forEach(([rn,ms])=>{ matchRows+=`<div class="round-lbl">Rodada ${rn}</div>`; ms.forEach(m=>{ let res=getRes(m.id); let scoreHtml=ST.admin? `<div class="sz"><input type="number" class="sinp" data-mid="${m.id}" data-side="h" value="${res?res.h:''}" min="0" max="30" inputmode="numeric"><span class="ssep">:</span><input type="number" class="sinp" data-mid="${m.id}" data-side="a" value="${res?res.a:''}" min="0" max="30" inputmode="numeric"></div>` : (res?`<div class="sdsp"><span class="${res.h>res.a?'sw':res.h<res.a?'sl':'sd'}">${res.h}</span><span>:</span><span class="${res.a>res.h?'sw':res.a<res.h?'sl':'sd'}">${res.a}</span></div>`:`<div class="sdsp novs">vs</div>`); matchRows+=`<div class="mr"><div class="m-dt"><div class="m-d">${m.dt}</div><div class="m-t">${m.tm}</div></div><div class="m-home">${fi(m.h,22)}<span class="t-name">${m.h}</span></div>${scoreHtml}<div class="m-away"><span class="t-name">${m.a}</span>${fi(m.a,22)}</div></div>`; }); }); out+=`<div class="gc"><div class="gc-head"><span class="gc-ttl">GRUPO ${g}</span></div><table class="stt"><thead><tr><th>#</th><th>Seleção</th><th>P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr></thead><tbody>${stRows}</tbody></table><div class="rounds-section">${matchRows}</div></div>`; }); out+='</div>'; document.getElementById('panel-tabela').innerHTML=out; if(ST.admin) attachAdminListeners(); }
-function calcStandings(g){ let st={}; GROUPS[g].forEach(t=>{st[t]={pts:0,j:0,v:0,e:0,d:0,gp:0,gc:0};}); MATCHES.filter(m=>m.g===g).forEach(m=>{let r=getRes(m.id); if(!r) return; let h=r.h,a=r.a; st[m.h].j++; st[m.a].j++; st[m.h].gp+=h; st[m.h].gc+=a; st[m.a].gp+=a; st[m.a].gc+=h; if(h>a){ st[m.h].v++; st[m.h].pts+=3; st[m.a].d++; } else if(a>h){ st[m.a].v++; st[m.a].pts+=3; st[m.h].d++; } else{ st[m.h].e++; st[m.a].e++; st[m.h].pts++; st[m.a].pts++; } }); return Object.entries(st).map(([t,s])=>({t,...s,sg:s.gp-s.gc})).sort((a,b)=>b.pts-a.pts||(b.sg-a.sg)||b.gp-a.gp||a.t.localeCompare(b.t)); }
-function attachAdminListeners(){ document.querySelectorAll('#panel-tabela .sinp').forEach(inp=>{ inp.addEventListener('input',e=>{ let mid=parseInt(e.target.dataset.mid); clearTimeout(window._resDeb?.[mid]); window._resDeb=window._resDeb||{}; window._resDeb[mid]=setTimeout(()=>{ let row=e.target.closest('.mr'); let hI=row.querySelector('[data-side="h"]'), aI=row.querySelector('[data-side="a"]'); let hv=hI.value.trim(), av=aI.value.trim(); if(hv===''&&av===''){ delete ST.results[mid]; save(); } else if(hv!==''&&av!==''){ let h=Math.max(0,parseInt(hv)||0), a=Math.max(0,parseInt(av)||0); setRes(mid,h,a); } renderTabela(); },600); }); }); }
-function renderAdmin(){ let el=document.getElementById('panel-admin'); if(!ST.admin){ el.innerHTML=`<div class="sec-h">🔐 ADMIN</div><div style="text-align:center"><div class="adm-form"><div class="adm-ttl">ÁREA ADMIN</div><input class="inp" id="ap2" type="password" placeholder="Senha"><button class="btn-sub" onclick="tryAdmin()">🔓 Desbloquear</button></div></div>`; document.getElementById('admDot').classList.remove('show'); return; } el.innerHTML=`<div class="sec-h">🔐 MODO ADMIN ATIVO</div><div><button class="btn-sub ghost" style="width:auto;padding:8px 20px" onclick="exitAdmin()">🔒 Sair</button><p style="margin-top:12px">Edite resultados diretamente na aba Tabela.</p></div>`; document.getElementById('admDot').classList.add('show'); }
-function tryAdmin(){ let v=document.getElementById('ap2')?.value||''; if(v===CFG.ADMIN_PASS){ ST.admin=true; renderAdmin(); renderTabela(); toast('✅ Admin ativado'); } else toast('❌ Senha incorreta'); }
+// ================= RENDER PALPITES =================
+function renderPalpites(){
+  const el = document.getElementById('panel-palpites');
+  if(!ST.user){
+    el.innerHTML = `<div class="empty"><span class="empty-ico">🎯</span><h2 class="empty-h">FAÇA SEUS PALPITES</h2><p class="empty-p">Entre no bolão para palpitar</p><button class="btn-join" onclick="openLogin()">⚽ Entrar</button></div>`;
+    return;
+  }
+  let html = `<div class="sec-h" style="justify-content:space-between"><span>🎯 PALPITES — ${escH(ST.user.name)}</span><button class="btn-save-all" id="btnSaveAllPredictions">💾 Salvar todos no BD</button></div><div class="pts-legend"><span class="pleg"><span class="pleg-dot" style="background:var(--gold)"></span>Exato 10 pts</span><span class="pleg"><span class="pleg-dot" style="background:var(--green)"></span>Resultado 5 pts</span><span class="pleg"><span class="pleg-dot" style="background:var(--red)"></span>Erro 0 pts</span></div><div class="gg">`;
+  Object.keys(GROUPS).forEach(g=>{
+    let rounds = {};
+    MATCHES.filter(m=>m.g===g).forEach(m=>{ if(!rounds[m.r]) rounds[m.r]=[]; rounds[m.r].push(m); });
+    let rows = '';
+    Object.entries(rounds).forEach(([rn, ms])=>{
+      rows += `<div class="round-lbl">Rodada ${rn}</div>`;
+      ms.forEach(m=>{
+        const pred = (ST.preds[ST.user.name]||{})[m.id] || null;
+        const res = getRes(m.id);
+        const pp = calcPts(pred, res);
+        const hv = pred ? pred.h : '';
+        const av = pred ? pred.a : '';
+        const ofcl = res ? `<div class="ofcl">Oficial<strong>${res.h}:${res.a}</strong></div>` : `<div class="ofcl" style="color:var(--dim)">Aguardando</div>`;
+        rows += `<div class="pred-row"><div class="m-dt"><div class="m-d">${m.dt}</div><div class="m-t">${m.tm}</div></div><div class="m-home">${fi(m.h,22)}<span class="t-name">${m.h}</span></div><div class="sz" style="flex-direction:column;gap:2px"><div style="display:flex;gap:3px"><input type="number" class="sinp" data-pmid="${m.id}" data-side="h" value="${hv}" min="0" max="30" inputmode="numeric"><span class="ssep">:</span><input type="number" class="sinp" data-pmid="${m.id}" data-side="a" value="${av}" min="0" max="30" inputmode="numeric"></div>${ofcl}</div><div class="m-away"><span class="t-name">${m.a}</span>${fi(m.a,22)}</div><div class="pts-badge ${pClass(pp)}">${pLabel(pp)}</div></div>`;
+      });
+    });
+    html += `<div class="gc"><div class="gc-head"><span class="gc-ttl">GRUPO ${g}</span></div><div class="rounds-section">${rows}</div></div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+  document.getElementById('btnSaveAllPredictions')?.addEventListener('click', saveAllPredictionsToDB);
+  // auto-save on input
+  let pdeb = {};
+  document.querySelectorAll('#panel-palpites .sinp').forEach(inp=>{
+    inp.addEventListener('input', e => {
+      const mid = parseInt(e.target.dataset.pmid);
+      clearTimeout(pdeb[mid]);
+      pdeb[mid] = setTimeout(async () => {
+        const row = e.target.closest('.pred-row');
+        const hI = row.querySelector('[data-side="h"]'), aI = row.querySelector('[data-side="a"]');
+        const hv = hI.value.trim(), av = aI.value.trim();
+        if(hv === '' && av === '') {
+          if(ST.preds[ST.user.name] && ST.preds[ST.user.name][mid]) delete ST.preds[ST.user.name][mid];
+          save();
+          if(supa) await supa.from('palpites').delete().eq('user_name', ST.user.name).eq('match_id', mid);
+          toast('🗑️ Palpite removido');
+        } else if(hv !== '' && av !== '') {
+          const h = Math.max(0, parseInt(hv)||0), a = Math.max(0, parseInt(av)||0);
+          if(!ST.preds[ST.user.name]) ST.preds[ST.user.name] = {};
+          ST.preds[ST.user.name][mid] = { h, a };
+          save();
+          await syncPredToSupabase(ST.user.name, mid, h, a);
+          const res = getRes(mid);
+          const pp = calcPts({h,a}, res);
+          const badge = row.querySelector('.pts-badge');
+          if(badge){ badge.className='pts-badge '+pClass(pp); badge.textContent=pLabel(pp); }
+          toast('💾 Palpite salvo');
+        }
+        renderRanking();
+      }, 500);
+    });
+  });
+}
+
+// ================= RENDER RANKING =================
+function renderRanking(){
+  let allUsers = [...new Set([...Object.keys(ST.preds), ...(ST.user?[ST.user.name]:[])])];
+  let leaderboard = allUsers.map(u => {
+    let total = 0, cnt = 0;
+    MATCHES.forEach(m => {
+      let pr = (ST.preds[u]||{})[m.id];
+      if(pr){ cnt++; let pp = calcPts(pr, getRes(m.id)); if(pp !== null) total += pp; }
+    });
+    return { u, total, cnt };
+  }).sort((a,b) => b.total - a.total || b.cnt - a.cnt);
+  let rows = leaderboard.map((x,i) => `<div class="rk-row${ST.user && x.u===ST.user.name ? ' me' : ''}"><div class="rk-pos">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div class="rk-av">${x.u[0].toUpperCase()}</div><div class="rk-name">${escH(x.u)}${ST.user && x.u===ST.user.name ? '<span class="rk-me">você</span>' : ''}</div><div><div class="rk-pts">${x.total}</div><div class="rk-sub">${x.cnt} palpite(s)</div></div></div>`).join('');
+  document.getElementById('panel-ranking').innerHTML = `<div class="sec-h">🏅 RANKING</div><div class="rk-card">${rows || '<div style="padding:24px;text-align:center">Nenhum palpite</div>'}</div>`;
+}
+
+// ================= ADMIN =================
+function renderAdmin(){
+  let el = document.getElementById('panel-admin');
+  if(!ST.admin){
+    el.innerHTML = `<div class="sec-h">🔐 ADMIN</div><div style="text-align:center"><div class="adm-form"><div class="adm-ttl">ÁREA ADMIN</div><input class="inp" id="ap2" type="password" placeholder="Senha"><button class="btn-sub" onclick="tryAdmin()">🔓 Desbloquear</button></div></div>`;
+    document.getElementById('admDot').classList.remove('show');
+    return;
+  }
+  el.innerHTML = `<div class="sec-h">🔐 MODO ADMIN ATIVO</div><div><button class="btn-sub ghost" style="width:auto;padding:8px 20px" onclick="exitAdmin()">🔒 Sair</button><p style="margin-top:12px">Edite resultados diretamente na aba Tabela.</p></div>`;
+  document.getElementById('admDot').classList.add('show');
+}
+function tryAdmin(){ let v = document.getElementById('ap2')?.value||''; if(v===CFG.ADMIN_PASS){ ST.admin=true; renderAdmin(); renderTabela(); toast('✅ Admin ativado'); } else toast('❌ Senha incorreta'); }
 function exitAdmin(){ ST.admin=false; renderAdmin(); renderTabela(); toast('🔒 Admin desativado'); }
-function doLogin(){ let name=document.getElementById('lName').value.trim(); let pass=document.getElementById('lPass').value.trim(); let err=document.getElementById('loginErr'); if(!name||!pass||pass.length<4){ err.textContent='Preencha nome e senha (mín 4)'; err.style.display='block'; return; } let stored=localStorage.getItem('c26_acc_'+name); if(stored){ let acc=JSON.parse(stored); if(acc.h!==btoa(pass)){ err.textContent='Senha incorreta'; err.style.display='block'; return; } } else localStorage.setItem('c26_acc_'+name,JSON.stringify({h:btoa(pass)})); ST.user={name}; save(); closeModal('loginModal'); updateAuthUI(); loadPredsFromSupabase(name); renderPalpites(); renderRanking(); toast(`👋 Bem-vindo, ${name}!`); }
+
+// ================= AUTH =================
+function doLogin(){
+  let name = document.getElementById('lName').value.trim();
+  let pass = document.getElementById('lPass').value.trim();
+  let err = document.getElementById('loginErr');
+  if(!name || !pass || pass.length<4){ err.textContent='Preencha nome e senha (mín 4)'; err.style.display='block'; return; }
+  let stored = localStorage.getItem('c26_acc_'+name);
+  if(stored){ let acc = JSON.parse(stored); if(acc.h !== btoa(pass)){ err.textContent='Senha incorreta'; err.style.display='block'; return; } }
+  else localStorage.setItem('c26_acc_'+name, JSON.stringify({h:btoa(pass)}));
+  ST.user = { name };
+  save();
+  closeModal('loginModal');
+  updateAuthUI();
+  loadPredictionsFromDB(name);
+  renderPalpites();
+  renderRanking();
+  toast(`👋 Bem-vindo, ${name}!`);
+}
 function doLogout(){ if(!confirm('Sair do bolão?')) return; ST.user=null; save(); updateAuthUI(); renderPalpites(); renderRanking(); toast('Você saiu.'); }
-function updateAuthUI(){ let a=document.getElementById('authArea'); a.innerHTML=ST.user?`<div class="user-pill">⚽ <strong>${escH(ST.user.name)}</strong><button class="btn-out" onclick="doLogout()">Sair</button></div>`:`<button class="btn-join" onclick="openLogin()">⚽ Participar do Bolão</button>`; }
+function updateAuthUI(){
+  let a = document.getElementById('authArea');
+  a.innerHTML = ST.user ? `<div class="user-pill">⚽ <strong>${escH(ST.user.name)}</strong><button class="btn-out" onclick="doLogout()">Sair</button></div>` : `<button class="btn-join" onclick="openLogin()">⚽ Participar do Bolão</button>`;
+}
 function openLogin(){ document.getElementById('loginModal').classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 function toast(msg){ let c=document.getElementById('tc'); let d=document.createElement('div'); d.className='toast'; d.textContent=msg; c.appendChild(d); setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(20px)';setTimeout(()=>d.remove(),320);},2300); }
 function setSyncStatus(state,txt){ document.getElementById('sdot').className='sdot '+state; document.getElementById('sdotTxt').textContent=txt; }
-document.querySelectorAll('.nav-btn').forEach(btn=>{ btn.addEventListener('click',function(){ document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on')); document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on')); this.classList.add('on'); let tab=this.dataset.tab; document.getElementById('panel-'+tab).classList.add('on'); if(tab==='tabela') renderTabela(); else if(tab==='palpites') renderPalpites(); else if(tab==='ranking') renderRanking(); else if(tab==='admin') renderAdmin(); }); });
-load(); updateAuthUI(); renderTabela(); if(supa){ (async()=>{ const {data} = await supa.from('partidas').select('id,placar_casa,placar_visitante'); if(data) data.forEach(r=>{ if(r.placar_casa!==null) ST.results[r.id]={h:r.placar_casa,a:r.placar_visitante}; }); save(); renderTabela(); })(); setSyncStatus('ok','BD ok'); } else setSyncStatus('er','Local');
+async function checkDbConnection(){
+  if(!supa){ toast('❌ Supabase não configurado'); setSyncStatus('er','Sem BD'); return; }
+  setSyncStatus('sv','Testando...');
+  try {
+    let { error, count } = await supa.from('partidas').select('id', { head: true, count: 'exact' });
+    if(error) throw error;
+    toast(`✅ Conectado! ${count} jogos`);
+    setSyncStatus('ok','BD ok');
+    await loadResultsFromSupabase();
+  } catch(e) { toast('Falha de conexão'); setSyncStatus('er','BD off'); }
+}
+
+// ================= NAVEGAÇÃO =================
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+    this.classList.add('on');
+    let tab = this.dataset.tab;
+    document.getElementById('panel-'+tab).classList.add('on');
+    if(tab==='tabela') renderTabela();
+    else if(tab==='palpites') renderPalpites();
+    else if(tab==='ranking') renderRanking();
+    else if(tab==='admin') renderAdmin();
+  });
+});
+
+// ================= INIT =================
+load();
+updateAuthUI();
+renderTabela();
+if(supa){
+  loadResultsFromSupabase().then(() => {
+    if(ST.user) loadPredictionsFromDB(ST.user.name);
+  });
+  setSyncStatus('ok', 'BD ok');
+} else setSyncStatus('er', 'Local');
+
+// Expor funções globais para botões
 window.checkDbConnection = checkDbConnection;
 window.saveAllPredictionsToDB = saveAllPredictionsToDB;
+window.refreshPredictionsFromDB = refreshPredictionsFromDB;
+window.doLogin = doLogin;
+window.doLogout = doLogout;
+window.openLogin = openLogin;
+window.closeModal = closeModal;
+window.tryAdmin = tryAdmin;
+window.exitAdmin = exitAdmin;
 </script>
 </body>
 </html>
