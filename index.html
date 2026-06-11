@@ -268,6 +268,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
   display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:#fff}
 /* ═══ LOGIN HINT ═══ */
 .login-hint{font-size:.72rem;font-weight:600;margin:-4px 0 8px;min-height:18px;transition:color .3s}
+/* ═══ ADMIN AÇÕES ═══ */
+.act-btn{border:none;border-radius:6px;padding:4px 9px;font-size:.68rem;font-weight:700;cursor:pointer;font-family:var(--fb);transition:all .2s;white-space:nowrap}
+.act-btn.del{background:rgba(255,80,80,.12);color:#ff8888;border:1px solid rgba(255,80,80,.28)}
+.act-btn.del:hover{background:rgba(255,80,80,.26);color:#fff}
+.act-btn.rst{background:rgba(255,200,0,.1);color:var(--gold);border:1px solid rgba(255,200,0,.25)}
+.act-btn.rst:hover{background:rgba(255,200,0,.2)}
+.live-btn{display:inline-flex;align-items:center;gap:7px;background:rgba(0,196,71,.12);border:1px solid rgba(0,196,71,.3);border-radius:8px;padding:8px 14px;font-size:.74rem;font-weight:700;color:var(--gl);cursor:pointer;transition:all .2s;font-family:var(--fb)}
+.live-btn:hover{background:rgba(0,196,71,.22);transform:translateY(-1px)}
+.live-btn.off{background:rgba(100,100,100,.1);border-color:rgba(150,150,150,.2);color:var(--dim)}
+.auto-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.auto-dot.on{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink .9s ease-in-out infinite}
+.auto-dot.off{background:var(--dim)}
 .sync-bar{position:fixed;bottom:16px;right:16px;background:var(--s2);
   border:1px solid var(--border);border-radius:50px;padding:7px 12px;
   font-size:.68rem;display:flex;align-items:center;gap:6px;z-index:200}
@@ -905,26 +917,169 @@ function renderRanking(){
     return`<div class="rk-row${me?' me':''}">
       <div class="rk-pos ${i<3?'rp'+(i+1):''}">${i<3?medals[i]:i+1}</div>
       <div class="rk-av">${x.u[0].toUpperCase()}</div>
-      <div class="rk-name">${escH(x.u)}${me?'<span class="rk-me">você</span>':''}</div>
-      <div style="text-align:right"><div class="rk-pts">${x.total}</div>
-        <div class="rk-sub">${x.ct} palpite${x.ct!==1?'s':''}</div></div>
-    </div>`;}).join('');
-  el.innerHTML=`<div class="sec-h">🏅 RANKING</div>
-  <div class="rk-card">${rows||'<div style="padding:24px;text-align:center;color:var(--muted)">Nenhum palpite registrado ainda.</div>'}</div>
-  <p style="text-align:center;font-size:.63rem;color:var(--dim);margin-top:10px">Classificação por dispositivo.</p>`;
+
+// ══════════════════════════════════════════════════════
+//  🌐  BUSCA AUTOMÁTICA DE RESULTADOS — ESPN API (grátis)
+// ══════════════════════════════════════════════════════
+// Mapeamento nomes ESPN (inglês) → nossos nomes (português)
+const ESPN_MAP = {
+  'Brazil':'Brasil','Morocco':'Marrocos','Haiti':'Haiti','Scotland':'Escócia',
+  'Mexico':'México','South Africa':'África do Sul','Korea Republic':'Coreia do Sul',
+  'Czech Republic':'República Tcheca','Czechia':'República Tcheca',
+  'Canada':'Canadá','Qatar':'Catar','Switzerland':'Suíça',
+  'Bosnia-Herzegovina':'Bósnia e Herzegovina','Bosnia and Herzegovina':'Bósnia e Herzegovina',
+  'United States':'Estados Unidos','USA':'Estados Unidos','Paraguay':'Paraguai',
+  'Australia':'Austrália','Turkey':'Turquia','Germany':'Alemanha',
+  'Curacao':'Curaçao',"Cote d'Ivoire":'Costa do Marfim',"Ivory Coast":'Costa do Marfim',
+  'Ecuador':'Equador','Netherlands':'Holanda','Holland':'Holanda',
+  'Japan':'Japão','Sweden':'Suécia','Tunisia':'Tunísia','Belgium':'Bélgica',
+  'Egypt':'Egito','Iran':'Irã','New Zealand':'Nova Zelândia','Spain':'Espanha',
+  'Cape Verde':'Cabo Verde','Saudi Arabia':'Arábia Saudita','Uruguay':'Uruguai',
+  'France':'França','Senegal':'Senegal','Iraq':'Iraque','Norway':'Noruega',
+  'Argentina':'Argentina','Algeria':'Argélia','Austria':'Áustria','Jordan':'Jordânia',
+  'Portugal':'Portugal','DR Congo':'RD do Congo','Congo DR':'RD do Congo',
+  'Uzbekistan':'Uzbequistão','Colombia':'Colômbia','England':'Inglaterra',
+  'Croatia':'Croácia','Ghana':'Gana','Panama':'Panamá',
+};
+
+let liveInterval = null;
+let liveActive = false;
+let lastFetch = null;
+let fetchCount = 0;
+
+function espnName(n){ return ESPN_MAP[n] || n; }
+
+async function fetchLiveScores(silent=false) {
+  const urls = [
+    // Placar ao vivo (jogos de hoje)
+    'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
+    // Histórico por data — buscamos os últimos 7 dias
+  ];
+  // Gera datas dos últimos 7 dias para buscar histórico
+  const dates = [];
+  for(let i=0;i<=7;i++){
+    const d=new Date(Date.now()-i*86400000);
+    dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+  }
+  let updated=0, fetched=false;
+  try {
+    // Busca placar ao vivo (hoje)
+    const r=await fetch(urls[0],{headers:{'Accept':'application/json'}});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    fetched=true; lastFetch=new Date();
+    (data.events||[]).forEach(ev=>{
+      const comp=ev.competitions?.[0]; if(!comp) return;
+      const statusName=comp.status?.type?.name||'';
+      if(!['STATUS_FINAL','STATUS_IN_PROGRESS','STATUS_HALFTIME'].includes(statusName)) return;
+      const home=comp.competitors?.find(c=>c.homeAway==='home');
+      const away=comp.competitors?.find(c=>c.homeAway==='away');
+      if(!home||!away) return;
+      const hName=espnName(home.team?.displayName||'');
+      const aName=espnName(away.team?.displayName||'');
+      const hs=parseInt(home.score), as2=parseInt(away.score);
+      if(isNaN(hs)||isNaN(as2)) return;
+      const match=MATCHES.find(m=>m.h===hName&&m.a===aName);
+      if(match){setRes(match.id,hs,as2);updated++;}
+    });
+  } catch(e){ if(!silent) setSyncStatus('er','ESPN offline'); }
+
+  // Busca histórico dos últimos 7 dias
+  for(const dt of dates){
+    try{
+      const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${dt}`);
+      if(!r.ok) continue;
+      const data=await r.json();
+      (data.events||[]).forEach(ev=>{
+        const comp=ev.competitions?.[0]; if(!comp) return;
+        if(comp.status?.type?.name!=='STATUS_FINAL') return;
+        const home=comp.competitors?.find(c=>c.homeAway==='home');
+        const away=comp.competitors?.find(c=>c.homeAway==='away');
+        if(!home||!away) return;
+        const hName=espnName(home.team?.displayName||'');
+        const aName=espnName(away.team?.displayName||'');
+        const hs=parseInt(home.score), as2=parseInt(away.score);
+        if(isNaN(hs)||isNaN(as2)) return;
+        const match=MATCHES.find(m=>m.h===hName&&m.a===aName);
+        if(match&&!getRes(match.id)){setRes(match.id,hs,as2);updated++;}
+      });
+    } catch(e){}
+  }
+
+  fetchCount++;
+  if(updated>0){
+    refreshAllPanels();
+    if(!silent) toast(`⚽ ${updated} resultado${updated>1?'s':''} atualizado${updated>1?'s':''} automaticamente!`);
+  }
+  updateLiveStatus();
+  return updated;
+}
+
+function startLivePolling(){
+  if(liveActive) return;
+  liveActive=true;
+  fetchLiveScores();
+  liveInterval=setInterval(()=>fetchLiveScores(true),60000); // a cada 60 seg
+  updateLiveStatus();
+  toast('🟢 Busca automática ativada (a cada 1 min)');
+}
+
+function stopLivePolling(){
+  liveActive=false;
+  clearInterval(liveInterval);
+  liveInterval=null;
+  updateLiveStatus();
+  toast('⏹ Busca automática pausada');
+}
+
+function updateLiveStatus(){
+  const dot=document.getElementById('liveDot');
+  const txt=document.getElementById('liveTxt');
+  const btn=document.getElementById('liveBtnToggle');
+  if(!dot||!txt) return;
+  if(liveActive){
+    dot.className='auto-dot on';
+    txt.textContent=`Ao vivo ${lastFetch?'· '+lastFetch.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}`;
+    if(btn){btn.className='live-btn';btn.innerHTML=`<span class="auto-dot on"></span> ⏹ Pausar Busca`;}
+  } else {
+    dot.className='auto-dot off';
+    txt.textContent=`Inativo ${fetchCount>0?'· '+fetchCount+' busca'+( fetchCount>1?'s':''):''}`;
+    if(btn){btn.className='live-btn off';btn.innerHTML=`<span class="auto-dot off"></span> ▶ Ativar Busca Auto`;}
+  }
 }
 
 // ══════════════════════════════════════════════════════
-//  👥  PARTICIPANTES
+//  👥  PARTICIPANTES — funções de edição
 // ══════════════════════════════════════════════════════
 function getAllUsers(){
   const u=[];
   for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('c26_acc_'))u.push(k.replace('c26_acc_',''));}
   return u;
 }
+function deleteUser(name){
+  if(!confirm(`Excluir o participante "${name}" e todos os palpites dele?`)) return;
+  localStorage.removeItem('c26_acc_'+name);
+  if(ST.preds[name]){delete ST.preds[name];save();}
+  if(ST.user&&ST.user.name===name){ST.user=null;save();updateAuthUI();}
+  renderAdmin();
+  toast(`🗑️ Participante "${name}" removido`);
+}
+function resetPreds(name){
+  if(!confirm(`Zerar todos os palpites de "${name}"?`)) return;
+  if(ST.preds[name]){delete ST.preds[name];save();}
+  renderAdmin();
+  toast(`🔄 Palpites de "${name}" zerados`);
+}
+function resetAllResults(){
+  if(!confirm('⚠️ Zerar TODOS os resultados oficiais? Isso não pode ser desfeito.')) return;
+  ST.results={};save();
+  if(supa) supa.from('partidas').update({placar_casa:null,placar_visitante:null}).lte('id',104).then(()=>{});
+  refreshAllPanels();
+  toast('🗑️ Todos os resultados foram zerados');
+}
 
 // ══════════════════════════════════════════════════════
-//  🔐  RENDER — ADMIN (com lista de participantes)
+//  🔐  RENDER — ADMIN completo
 // ══════════════════════════════════════════════════════
 function renderAdmin(){
   const el=document.getElementById('panel-admin');
@@ -935,77 +1090,134 @@ function renderAdmin(){
       <div class="adm-form">
         <div class="adm-ttl">ÁREA ADMIN</div>
         <p style="color:var(--muted);font-size:.76rem;margin-bottom:14px">
-          Insira a senha para editar resultados e ver os participantes.
+          Insira a senha para editar resultados e gerenciar participantes.
         </p>
         <input class="inp" id="ap2" type="password" placeholder="Senha de administrador" autocomplete="off">
         <button class="btn-sub" style="margin-top:4px" onclick="tryAdmin()">🔓 Desbloquear</button>
       </div>
     </div>`;
     document.getElementById('admDot').classList.remove('show');
-  } else {
-    const users=getAllUsers();
-    const lb=users.map(u=>{
-      let pts=0,ct=0,ct10=0,ct5=0;
-      MATCHES.forEach(m=>{const pr=(ST.preds[u]||{})[m.id];if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}}});
-      return{u,pts,ct,ct10,ct5};
-    }).sort((a,b)=>b.pts-a.pts||b.ct-a.ct);
-    const medals=['🥇','🥈','🥉'];
-    let partRows=lb.length===0
-      ?`<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Nenhum participante cadastrado ainda.</td></tr>`
-      :lb.map((x,i)=>`<tr>
-        <td><strong style="color:${i<3?['var(--gold)','#bbb','#c08040'][i]:'var(--text)'}">${i<3?medals[i]:i+1}</strong></td>
-        <td><div style="display:flex;align-items:center;gap:8px">
-          <div class="part-av">${x.u[0].toUpperCase()}</div>
-          <span>${escH(x.u)}${ST.user&&x.u===ST.user.name?' <span style="font-size:.6rem;color:var(--green)">(você)</span>':''}</span>
-        </div></td>
-        <td><strong style="color:var(--gold)">${x.pts}</strong></td>
-        <td>${x.ct}</td>
-        <td style="color:var(--gold)">${x.ct10}</td>
-        <td style="color:var(--green)">${x.ct5}</td>
-      </tr>`).join('');
-
-    const locked5=MATCHES.filter(m=>matchStatus(m).s!=='open').slice(0,6);
-    el.innerHTML=`<div class="sec-h">🔐 MODO ADMIN ATIVO</div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
-      <div class="adm-badge" style="background:rgba(0,196,71,.14);border-color:var(--brd-g);color:var(--gl)">✅ Admin Ativo</div>
-      <button class="btn-sub ghost" style="width:auto;padding:8px 16px;font-size:.76rem" onclick="exitAdmin()">🔒 Sair</button>
-    </div>
-    <p style="color:var(--muted);font-size:.78rem;margin-bottom:22px;line-height:1.7">
-      ⚽ Edite resultados na aba <strong style="color:var(--text)">📊 Tabela</strong><br>
-      🔄 Supabase: <strong style="color:${supa?'var(--gl)':'var(--red)'}">${supa?'✅ Conectado':'❌ Não configurado'}</strong>
-    </p>
-
-    <div class="sec-h" style="font-size:1.4rem">👥 PARTICIPANTES
-      <span style="font-family:var(--fb);font-size:.75rem;color:var(--muted)">${lb.length} cadastrado${lb.length!==1?'s':''}</span>
-    </div>
-    <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:24px">
-      <table class="part-table">
-        <thead><tr><th>#</th><th>Participante</th><th>Pts</th><th>Palpites</th><th>🎯 Exatos</th><th>✅ Certos</th></tr></thead>
-        <tbody>${partRows}</tbody>
-      </table>
-    </div>
-
-    <div class="sec-h" style="font-size:1.4rem">🔒 PALPITES BLOQUEADOS</div>
-    <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:16px;font-size:.78rem;color:var(--muted)">
-      ${locked5.length===0
-        ?`<div style="color:var(--dim)">Nenhum jogo bloqueado ainda — Copa começa em 11/06/2026</div>`
-        :locked5.map(m=>{
-          const st2=matchStatus(m);
-          const badge=st2.s==='live'?'🔴 Em jogo':'✅ Encerrado';
-          const lc=getAllUsers().filter(u=>(ST.preds[u]||{})[m.id]).length;
-          return`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)">
-            <span>${fi(m.h,18)} ${m.h} <span style="color:var(--dim)">vs</span> ${m.a} ${fi(m.a,18)}</span>
-            <span>${badge} &nbsp;<strong style="color:var(--text)">${lc} palpite${lc!==1?'s':''}</strong></span>
-          </div>`;}).join('')
-      }
-    </div>`;
-    document.getElementById('admDot').classList.add('show');
+    return;
   }
+
+  // ── Participantes ──
+  const users=getAllUsers();
+  const lb=users.map(u=>{
+    let pts=0,ct=0,ct10=0,ct5=0;
+    MATCHES.forEach(m=>{const pr=(ST.preds[u]||{})[m.id];if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}}});
+    return{u,pts,ct,ct10,ct5};
+  }).sort((a,b)=>b.pts-a.pts||b.ct-a.ct);
+  const medals=['🥇','🥈','🥉'];
+
+  const partRows=lb.length===0
+    ?`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nenhum participante cadastrado ainda.</td></tr>`
+    :lb.map((x,i)=>`<tr>
+      <td><strong style="color:${i<3?['var(--gold)','#bbb','#c08040'][i]:'var(--text)'}">${i<3?medals[i]:i+1}</strong></td>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div class="part-av">${x.u[0].toUpperCase()}</div>
+        <span>${escH(x.u)}${ST.user&&x.u===ST.user.name?' <span style="font-size:.58rem;color:var(--green)">(você)</span>':''}</span>
+      </div></td>
+      <td><strong style="color:var(--gold)">${x.pts}</strong></td>
+      <td>${x.ct}</td>
+      <td style="color:var(--gold)">${x.ct10}</td>
+      <td style="color:var(--green)">${x.ct5}</td>
+      <td style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="act-btn rst" onclick="resetPreds('${escH(x.u)}')">🔄 Zerar</button>
+        <button class="act-btn del" onclick="deleteUser('${escH(x.u)}')">🗑️ Excluir</button>
+      </td>
+    </tr>`).join('');
+
+  // ── Jogos ao vivo / bloqueados ──
+  const locked5=MATCHES.filter(m=>matchStatus(m).s!=='open').slice(0,8);
+
+  el.innerHTML=`
+  <div class="sec-h">🔐 MODO ADMIN ATIVO</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+    <div class="adm-badge" style="background:rgba(0,196,71,.14);border-color:var(--brd-g);color:var(--gl)">✅ Admin Ativo</div>
+    <button class="btn-sub ghost" style="width:auto;padding:8px 16px;font-size:.75rem" onclick="exitAdmin()">🔒 Sair do Admin</button>
+    <span style="font-size:.75rem;color:var(--muted)">Edite resultados na aba 📊 Tabela</span>
+  </div>
+
+  <!-- ══ BUSCA AUTOMÁTICA ══ -->
+  <div class="sec-h" style="font-size:1.4rem">🌐 RESULTADOS AUTOMÁTICOS</div>
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+      <div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:3px">ESPN API — gratuita, sem chave</div>
+        <div style="font-size:.72rem;color:var(--muted)">Busca placar ao vivo e histórico dos últimos 7 dias automaticamente</div>
+      </div>
+      <button id="liveBtnToggle" class="live-btn ${liveActive?'':'off'}" onclick="liveActive?stopLivePolling():startLivePolling()">
+        <span class="auto-dot ${liveActive?'on':'off'}"></span>
+        ${liveActive?'⏹ Pausar Busca':'▶ Ativar Busca Auto'}
+      </button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid rgba(255,255,255,.05)">
+      <span class="auto-dot ${liveActive?'on':'off'}" id="liveDot"></span>
+      <span id="liveTxt" style="font-size:.72rem;color:var(--muted)">${liveActive?'Ativo':'Inativo'}</span>
+      <span style="margin-left:auto;display:flex;gap:8px">
+        <button class="act-btn rst" onclick="fetchLiveScores()">🔄 Buscar Agora</button>
+        <button class="act-btn del" onclick="resetAllResults()">🗑️ Zerar Tudo</button>
+      </span>
+    </div>
+    <div style="font-size:.68rem;color:var(--dim);margin-top:8px;line-height:1.6">
+      ℹ️ A Copa começa em 11/06/2026. Antes disso a API retorna vazia — isso é normal.<br>
+      ⚡ Durante a Copa: ative a busca e os gols serão atualizados a cada 1 minuto automaticamente.<br>
+      🔄 Supabase: <strong style="color:${supa?'var(--gl)':'var(--red)'}"> ${supa?'✅ Conectado — resultados sincronizados para todos':'❌ Não configurado — apenas local'}</strong>
+    </div>
+  </div>
+
+  <!-- ══ JOGOS BLOQUEADOS ══ -->
+  <div class="sec-h" style="font-size:1.4rem">🔒 JOGOS BLOQUEADOS / EM ANDAMENTO</div>
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:24px;font-size:.78rem">
+    ${locked5.length===0
+      ?`<div style="color:var(--dim);padding:4px 0">Nenhum jogo bloqueado ainda — Copa começa em 11/06/2026 🗓️</div>`
+      :locked5.map(m=>{
+        const st2=matchStatus(m);
+        const badge=st2.s==='live'?'🔴 Em jogo':'✅ Encerrado';
+        const res=getRes(m.id);
+        const sc=res?`<strong style="color:var(--text)">${res.h}:${res.a}</strong>`:`<span style="color:var(--dim)">sem placar</span>`;
+        const lc=getAllUsers().filter(u=>(ST.preds[u]||{})[m.id]).length;
+        return`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);gap:8px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:6px">${fi(m.h,18)} ${m.h} <span style="color:var(--dim)">×</span> ${m.a} ${fi(m.a,18)}</span>
+          <span style="display:flex;align-items:center;gap:10px">${sc} &nbsp; ${badge} &nbsp; <span style="color:var(--muted)">${lc} palpite${lc!==1?'s':''}</span></span>
+        </div>`;
+      }).join('')
+    }
+  </div>
+
+  <!-- ══ PARTICIPANTES ══ -->
+  <div class="sec-h" style="font-size:1.4rem">👥 PARTICIPANTES
+    <span style="font-family:var(--fb);font-size:.73rem;color:var(--muted)">${lb.length} cadastrado${lb.length!==1?'s':''}</span>
+  </div>
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:auto;margin-bottom:14px">
+    <table class="part-table">
+      <thead><tr>
+        <th>#</th><th>Participante</th><th>Pts</th>
+        <th>Palpites</th><th>🎯 Exatos</th><th>✅ Certos</th><th>Ações</th>
+      </tr></thead>
+      <tbody>${partRows}</tbody>
+    </table>
+  </div>
+  <p style="font-size:.65rem;color:var(--dim);margin-bottom:24px">
+    🔄 Zerar — remove todos os palpites mas mantém a conta &nbsp;|&nbsp; 🗑️ Excluir — remove conta e palpites permanentemente
+  </p>`;
+
+  document.getElementById('admDot').classList.add('show');
+  updateLiveStatus();
 }
+
 function tryAdmin(){
   const v=document.getElementById('ap2')?.value||'';
-  if(v===CFG.ADMIN_PASS){ST.admin=true;renderAdmin();renderTabela();toast('✅ Modo admin ativado!');}
-  else toast('❌ Senha incorreta.');
+  if(v===CFG.ADMIN_PASS){
+    ST.admin=true;
+    renderAdmin();
+    renderTabela();
+    toast('✅ Modo admin ativado!');
+    // Inicia busca automática ao entrar no admin
+    if(!liveActive) startLivePolling();
+  } else {
+    toast('❌ Senha incorreta.');
+  }
 }
 function exitAdmin(){ST.admin=false;renderAdmin();renderTabela();toast('🔒 Modo admin desativado.');}
 
@@ -1075,7 +1287,7 @@ function updateAuthUI(){
 function toast(msg){
   const c=document.getElementById('tc');
   const d=document.createElement('div');d.className='toast';d.textContent=msg;c.appendChild(d);
-  setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(20px)';d.style.transition='.3s';setTimeout(()=>d.remove(),320);},2500);
+  setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(20px)';d.style.transition='.3s';setTimeout(()=>d.remove(),320);},2600);
 }
 function escH(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function refreshAllPanels(){
@@ -1084,6 +1296,7 @@ function refreshAllPanels(){
   if(tab==='tabela')renderTabela();
   else if(tab==='palpites')renderPalpites();
   else if(tab==='ranking')renderRanking();
+  else if(tab==='admin')renderAdmin();
 }
 
 // ══════════════════════════════════════════════════════
@@ -1116,6 +1329,9 @@ load();
 updateAuthUI();
 renderTabela();
 if(supa)syncFromSupabase();else setSyncStatus('','Sem Supabase');
+// Busca automática sempre ativa em background (silenciosa)
+fetchLiveScores(true);
+setInterval(()=>fetchLiveScores(true), 120000); // a cada 2 min em background
 </script>
 </body>
 </html>
