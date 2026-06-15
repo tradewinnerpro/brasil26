@@ -1,115 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>🏆 Copa do Mundo 2026 — Bolão Oficial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#05100a;--s1:#0b1a10;--s2:#111f15;--s3:#162a1c;
+  --border:rgba(255,255,255,.1);--brd-g:rgba(0,200,70,.35);--brd-y:rgba(255,215,0,.35);
+  --text:#edf5ef;--muted:#9ecaaa;--dim:#72a880;
+  --green:#00c447;--gl:#00ee5a;--gold:#ffd700;--red:#ff5555;
+  --fh:'Bebas Neue',Impact,sans-serif;--fb:'Inter',system-ui,sans-serif;--r:13px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875rem;min-height:100vh;overflow-x:hidden}
+.fbg{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 50% 30%,rgba(0,140,40,.1) 0%,transparent 60%),
+  linear-gradient(180deg,#030b05 0%,#05100a 35%,#081408 70%,#05100a 100%);pointer-events:none}
+.app{position:relative;z-index:1}
+.wrap{max-width:1320px;margin:0 auto;padding:0 14px}
+.hdr{background:linear-gradient(180deg,rgba(2,12,5,.99) 0%,rgba(5,14,8,.96) 100%);
+  border-bottom:1px solid var(--brd-g);padding:18px 0;position:relative;overflow:hidden}
+.hdr::before{content:'';position:absolute;top:-80px;left:50%;transform:translateX(-50%);
+  width:500px;height:400px;background:radial-gradient(circle,rgba(255,215,0,.07),transparent 65%);pointer-events:none}
+.hdr-in{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:relative}
+.brand{display:flex;align-items:center;gap:12px}
+.troph{font-size:2.4rem;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 16px rgba(255,215,0,.45))}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.brand-ttl{font-family:var(--fh);font-size:clamp(1.4rem,4.5vw,2.5rem);letter-spacing:.06em;
+  background:linear-gradient(180deg,#fff 0%,var(--gold) 55%,#c97800 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.brand-sub{font-size:.62rem;color:var(--muted);letter-spacing:.1em;margin-top:3px}
+.btn-join{background:linear-gradient(135deg,var(--gold),#ff9f00);color:#111;border:none;
+  border-radius:50px;padding:10px 20px;font-weight:800;font-size:.8rem;cursor:pointer;
+  font-family:var(--fb);letter-spacing:.03em;transition:all .22s;
+  box-shadow:0 6px 18px rgba(255,160,0,.25);white-space:nowrap;touch-action:manipulation}
+.btn-join:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(255,160,0,.4)}
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(0,179,65,.1);
+  border:1px solid rgba(0,179,65,.28);border-radius:50px;padding:7px 14px;font-size:.78rem;font-weight:600}
+.btn-out{background:none;border:none;color:var(--red);cursor:pointer;font-size:.7rem;font-weight:700;
+  padding:3px 9px;border-radius:14px;transition:background .2s;touch-action:manipulation}
+.btn-out:hover{background:rgba(240,60,60,.1)}
+.nav{background:rgba(5,14,8,.97);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:90}
+.nav-list{display:flex;overflow-x:auto;scrollbar-width:none;padding:0 2px}
+.nav-list::-webkit-scrollbar{display:none}
+.nav-btn{padding:12px 16px;border:none;background:transparent;color:var(--muted);
+  font-weight:600;font-size:.78rem;cursor:pointer;font-family:var(--fb);
+  display:flex;align-items:center;gap:5px;white-space:nowrap;
+  border-bottom:2.5px solid transparent;transition:all .2s;position:relative;touch-action:manipulation}
+.nav-btn:hover{color:var(--text)}
+.nav-btn.on{color:var(--green);border-bottom-color:var(--green)}
+.adm-dot{width:7px;height:7px;background:var(--gold);border-radius:50%;
+  position:absolute;top:9px;right:8px;display:none}
+.adm-dot.show{display:block}
+.panel{display:none;padding:20px 0 60px;animation:fadeUp .28s ease}
+.panel.on{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sec-h{font-family:var(--fh);font-size:1.85rem;letter-spacing:.06em;
+  display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.sec-h::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.08),transparent)}
+.br-hero{background:linear-gradient(135deg,rgba(0,80,28,.35),rgba(0,30,10,.12));
+  border:1px solid rgba(0,180,65,.35);border-radius:var(--r);
+  padding:22px 18px;margin-bottom:22px;text-align:center;position:relative;overflow:hidden}
+.br-hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 80% at 50% 50%,rgba(0,156,59,.1),transparent);pointer-events:none}
+.br-hero-flag{font-size:2.6rem;display:block;margin-bottom:7px;filter:drop-shadow(0 0 16px rgba(0,156,59,.5))}
+.br-hero-title{font-family:var(--fh);font-size:2.2rem;letter-spacing:.1em;
+  color:var(--gold);text-shadow:0 0 24px rgba(255,215,0,.35);margin-bottom:4px}
+.br-hero-sub{font-size:.75rem;color:rgba(180,220,190,.6);margin-bottom:14px}
+.br-stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.st-box{background:rgba(0,0,0,.3);border:1px solid rgba(0,180,65,.2);border-radius:8px;
+  padding:10px 14px;text-align:center;min-width:60px}
+.st-val{font-family:var(--fh);font-size:1.8rem;color:var(--gold);line-height:1}
+.st-lbl{font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:2px}
+.gg{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:16px}
+@media(max-width:520px){.gg{grid-template-columns:1fr}}
+.gc{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.35);transition:transform .25s,box-shadow .25s}
+.gc:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.gc.brazil{border-color:var(--brd-g);box-shadow:0 4px 20px rgba(0,179,65,.14)}
+.gc-head{display:flex;justify-content:space-between;align-items:center;
+  padding:11px 15px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border)}
+.gc.brazil .gc-head{background:linear-gradient(90deg,rgba(0,50,18,.8),rgba(0,100,28,.35))}
+.gc-ttl{font-family:var(--fh);font-size:1.25rem;letter-spacing:.07em;display:flex;align-items:center;gap:8px}
+.gc-flags{display:flex;gap:3px;align-items:center}
+.stt{width:100%;border-collapse:collapse;font-size:.73rem}
+.stt thead th{padding:7px 5px;text-align:center;color:var(--dim);font-size:.57rem;
+  text-transform:uppercase;letter-spacing:.1em;font-weight:700;
+  background:rgba(0,0,0,.2);border-bottom:1px solid var(--border)}
+.stt thead th:nth-child(2){text-align:left;padding-left:7px}
+.stt tbody td{padding:8px 5px;text-align:center;border-bottom:1px solid rgba(255,255,255,.022);transition:background .15s}
+.stt tbody td:nth-child(2){text-align:left;padding-left:7px}
+.stt tbody tr:hover td{background:rgba(255,255,255,.02)}
+.stt tbody tr:last-child td{border-bottom:none}
+.team-cell{display:flex;align-items:center;gap:6px}
+.pb{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;font-weight:800;font-size:.62rem}
+.pb1{background:linear-gradient(135deg,var(--gold),#cc8800);color:#000}
+.pb2{background:rgba(0,179,65,.3);color:var(--gl)}
+.pb3{background:rgba(255,215,0,.12);color:var(--gold)}
+.pb4{background:rgba(240,60,60,.12);color:var(--red)}
+.pts-v{font-weight:800;font-size:.86rem}
+.sg-p{color:var(--green)}.sg-n{color:var(--red)}
+.rounds-section{border-top:1px solid var(--border)}
+.round-lbl{padding:6px 15px;font-size:.57rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.15em;color:var(--dim);background:rgba(0,0,0,.18)}
+.mr{display:grid;grid-template-columns:62px 1fr 92px 1fr;
+  align-items:center;padding:8px 13px;gap:7px;
+  border-bottom:1px solid rgba(255,255,255,.022);transition:background .15s}
+.mr:hover{background:rgba(255,255,255,.015)}
+.mr:last-child{border-bottom:none}
+.mr.brmatch{background:rgba(0,60,22,.18)}
+.mr.brmatch:hover{background:rgba(0,70,26,.28)}
+.m-dt{text-align:center}
+.m-d{font-size:.6rem;color:var(--dim)}
+.m-t{font-family:var(--fh);font-size:.78rem;letter-spacing:1px;color:var(--muted)}
+.m-v{font-size:.56rem;color:var(--dim);line-height:1.3;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:62px}
+.m-home{display:flex;align-items:center;gap:5px;justify-content:flex-end;font-size:.76rem;font-weight:600}
+.m-away{display:flex;align-items:center;gap:5px;font-size:.76rem;font-weight:600}
+.t-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:105px}
+.sz{display:flex;align-items:center;gap:3px;justify-content:center}
+.ssep{font-weight:800;font-size:.82rem;color:var(--muted)}
+/* ✅ MOBILE FIX: touch-action + font-size >= 16px evita zoom no iOS */
+.sinp{width:38px;height:40px;background:rgba(0,0,0,.5);border:1.5px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:var(--fh);font-size:1.08rem;
+  letter-spacing:1px;text-align:center;outline:none;transition:all .2s;
+  -moz-appearance:textfield;touch-action:manipulation}
+.sinp::-webkit-outer-spin-button,.sinp::-webkit-inner-spin-button{-webkit-appearance:none}
+.sinp:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,179,65,.15);background:rgba(0,0,0,.7)}
+.sinp.w{border-color:var(--gl);color:var(--gl)}
+.sinp.l{border-color:var(--red);color:var(--red)}
+.sinp.d{border-color:var(--gold);color:var(--gold)}
+.sdsp{display:flex;align-items:center;gap:4px;justify-content:center;
+  font-family:var(--fh);font-size:1rem;letter-spacing:2px;
+  min-width:72px;padding:4px 7px;border-radius:8px;background:rgba(255,255,255,.03)}
+.sdsp.novs{font-family:var(--fb);font-size:.68rem;color:var(--muted);letter-spacing:0;border:1px dashed rgba(255,255,255,.06)}
+.sdsp .sw{color:var(--gl)}.sdsp .sl{color:var(--red)}.sdsp .sd{color:var(--gold)}
+.pred-row{display:grid;grid-template-columns:62px 1fr 108px 1fr 44px;
+  align-items:center;padding:8px 13px;gap:7px;
+  border-bottom:1px solid rgba(255,255,255,.022);transition:background .15s}
+.pred-row:hover{background:rgba(255,255,255,.015)}
+.pred-row:last-child{border-bottom:none}
+.pred-row.locked{opacity:.7}
+.pts-badge{font-family:var(--fh);font-size:1.05rem;text-align:center;min-width:36px}
+.pts10{color:var(--gold)}.pts5{color:var(--green)}.pts0{color:var(--red)}.ptsnull{color:var(--dim)}
+.pts-legend{display:flex;flex-wrap:wrap;gap:12px;background:var(--s1);
+  border:1px solid var(--border);border-radius:var(--r);
+  padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:var(--muted)}
+.pleg{display:flex;align-items:center;gap:6px}
+.pleg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ofcl{font-size:.6rem;text-align:center;color:var(--muted);line-height:1.4}
+.ofcl strong{font-family:var(--fh);font-size:.82rem;letter-spacing:1px;display:block}
+.score-locked{font-family:var(--fh);font-size:1rem;letter-spacing:2px;color:var(--dim);
+  background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.08);
+  border-radius:8px;padding:4px 10px;min-width:72px;text-align:center}
+.badge-live{display:inline-flex;align-items:center;gap:4px;background:rgba(255,60,60,.15);
+  border:1px solid rgba(255,60,60,.4);border-radius:20px;padding:3px 10px;
+  font-size:.62rem;font-weight:700;color:#ff6666;letter-spacing:.05em}
+.badge-ended{display:inline-flex;align-items:center;gap:4px;background:rgba(100,100,100,.15);
+  border:1px solid rgba(150,150,150,.3);border-radius:20px;padding:3px 10px;
+  font-size:.62rem;font-weight:700;color:var(--dim);letter-spacing:.05em}
+.badge-soon{display:inline-flex;align-items:center;gap:4px;background:rgba(255,200,0,.12);
+  border:1px solid rgba(255,200,0,.35);border-radius:20px;padding:3px 10px;
+  font-size:.62rem;font-weight:700;color:var(--gold);letter-spacing:.05em;
+  animation:blink 1.2s ease-in-out infinite}
+.rk-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;max-width:620px;margin:0 auto}
+.rk-row{display:flex;align-items:center;gap:11px;padding:12px 15px;border-bottom:1px solid rgba(255,255,255,.03);transition:background .15s}
+.rk-row:hover{background:rgba(255,255,255,.02)}
+.rk-row:last-child{border-bottom:none}
+.rk-row.me{background:rgba(0,179,65,.06);border-left:3px solid var(--green)}
+.rk-pos{font-family:var(--fh);font-size:1.08rem;min-width:26px;text-align:center}
+.rp1{color:var(--gold)}.rp2{color:#bbb}.rp3{color:#c08040}
+.rk-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--gl));
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.88rem;flex-shrink:0;color:#fff}
+.rk-name{flex:1;font-weight:600;font-size:.8rem}
+.rk-me{font-size:.56rem;color:var(--green);margin-left:4px;font-weight:700}
+.rk-pts{font-family:var(--fh);font-size:1.25rem;color:var(--gold)}
+.rk-sub{font-size:.6rem;color:var(--muted);text-align:right}
+.adm-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(255,215,0,.1);
+  border:1px solid var(--brd-y);border-radius:50px;padding:5px 14px;
+  font-size:.7rem;font-weight:700;color:var(--gold);margin-bottom:14px}
+.adm-form{max-width:360px;margin:0 auto;background:var(--s1);
+  border:1px solid var(--brd-y);border-radius:18px;padding:28px;text-align:center}
+.adm-ttl{font-family:var(--fh);font-size:1.6rem;letter-spacing:.06em;color:var(--gold);margin-bottom:14px}
+.part-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.part-table th{padding:8px 12px;text-align:left;font-size:.62rem;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--dim);background:rgba(0,0,0,.25);border-bottom:1px solid var(--border);font-weight:700}
+.part-table th:not(:first-child){text-align:center}
+.part-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
+.part-table td:not(:first-child){text-align:center}
+.part-table tr:hover td{background:rgba(255,255,255,.02)}
+.part-table tr:last-child td{border-bottom:none}
+.part-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--gl));
+  display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:#fff}
+.act-btn{border:none;border-radius:6px;padding:5px 10px;font-size:.68rem;font-weight:700;
+  cursor:pointer;font-family:var(--fb);transition:all .2s;white-space:nowrap;touch-action:manipulation}
+.act-btn.del{background:rgba(255,80,80,.12);color:#ff8888;border:1px solid rgba(255,80,80,.28)}
+.act-btn.del:hover{background:rgba(255,80,80,.26);color:#fff}
+.act-btn.rst{background:rgba(255,200,0,.1);color:var(--gold);border:1px solid rgba(255,200,0,.25)}
+.act-btn.rst:hover{background:rgba(255,200,0,.2)}
+.auto-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.auto-dot.on{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink .9s ease-in-out infinite}
+.auto-dot.off{background:var(--dim)}
+.login-hint{font-size:.72rem;font-weight:600;margin:-4px 0 8px;min-height:18px;transition:color .3s}
+.modal-ov{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.82);
+  backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:14px}
+.modal-ov.open{display:flex}
+.mbox{background:rgba(10,22,14,.98);border:1px solid var(--brd-g);border-radius:18px;
+  padding:28px;max-width:380px;width:100%;text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.7);animation:mIn .22s ease;position:relative}
+@keyframes mIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.m-close{position:absolute;top:11px;right:14px;background:none;border:none;
+  color:var(--muted);font-size:1.2rem;cursor:pointer;transition:color .2s;touch-action:manipulation}
+.m-close:hover{color:var(--text)}
+.m-ico{font-size:2.6rem;margin-bottom:8px}
+.m-ttl{font-family:var(--fh);font-size:1.7rem;letter-spacing:.06em;margin-bottom:5px}
+.m-txt{color:var(--muted);font-size:.76rem;margin-bottom:16px}
+/* ✅ MOBILE FIX: font-size 1rem evita zoom no iOS */
+.inp{width:100%;padding:11px 13px;background:rgba(0,0,0,.5);
+  border:1.5px solid var(--border);border-radius:9px;color:var(--text);
+  font-family:var(--fb);font-size:1rem;outline:none;transition:border-color .2s;margin-bottom:9px}
+.inp:focus{border-color:var(--green)}
+.btn-sub{width:100%;padding:12px;background:linear-gradient(135deg,var(--green),var(--gl));
+  border:none;border-radius:9px;color:#fff;font-weight:800;font-size:.86rem;cursor:pointer;
+  font-family:var(--fb);letter-spacing:.04em;text-transform:uppercase;transition:all .2s;
+  box-shadow:0 6px 16px rgba(0,179,65,.25);touch-action:manipulation}
+.btn-sub:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(0,179,65,.4)}
+.btn-sub.ghost{background:rgba(255,255,255,.07);color:var(--text);box-shadow:none}
+.btn-sub.ghost:hover{background:rgba(255,255,255,.12);box-shadow:none;transform:none}
+.m-sm{font-size:.64rem;color:var(--dim);margin-top:8px}
+.m-err{color:var(--red);font-size:.73rem;margin-top:5px;display:none}
+.empty{text-align:center;padding:50px 18px}
+.empty-ico{font-size:3.2rem;display:block;margin-bottom:12px}
+.empty-h{font-family:var(--fh);font-size:1.7rem;letter-spacing:.06em;margin-bottom:7px}
+.empty-p{color:var(--muted);font-size:.82rem;margin-bottom:20px}
+.sync-bar{position:fixed;bottom:16px;right:16px;background:var(--s2);
+  border:1px solid var(--border);border-radius:50px;padding:7px 12px;
+  font-size:.68rem;display:flex;align-items:center;gap:6px;z-index:200}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--dim);flex-shrink:0}
+.sdot.ok{background:var(--green);box-shadow:0 0 5px var(--green)}
+.sdot.sv{background:var(--gold);animation:blink .8s ease-in-out infinite}
+.sdot.er{background:var(--red)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+#tc{position:fixed;top:16px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{background:var(--s1);border:1px solid var(--brd-g);color:var(--text);
+  padding:10px 16px;border-radius:16px;font-weight:600;font-size:.76rem;
+  box-shadow:0 6px 18px rgba(0,0,0,.5);animation:tIn .24s ease;max-width:250px}
+@keyframes tIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;border-top:1px solid var(--border);margin-top:10px;line-height:1.8}
+@media(max-width:640px){
+  .mr{grid-template-columns:50px 1fr 82px 1fr;padding:7px 10px;gap:5px}
+  .pred-row{grid-template-columns:50px 1fr 96px 1fr 36px;padding:7px 10px;gap:5px}
+  .t-name{max-width:70px}.m-home,.m-away{font-size:.7rem}
+  .sinp{width:36px;height:40px;font-size:1rem} /* ✅ 1rem = 16px = sem zoom iOS */
+  .sdsp{font-size:.88rem;min-width:62px}.nav-btn .lbl{display:none}
+  .m-v{display:none}
+}
+@media(max-width:400px){.t-name{max-width:52px;font-size:.66rem}}
+</style>
+</head>
+<body>
+<div class="fbg"></div>
+<div class="app">
+<header class="hdr"><div class="wrap"><div class="hdr-in">
+  <div class="brand">
+    <div class="troph">🏆</div>
+    <div>
+      <div class="brand-ttl">COPA DO MUNDO 2026</div>
+      <div class="brand-sub">🇺🇸 Estados Unidos · 🇨🇦 Canadá · 🇲🇽 México · 11 Jun – 19 Jul</div>
+    </div>
+  </div>
+  <div id="authArea">
+    <button class="btn-join" onclick="openLogin()">⚽ Participar do Bolão</button>
+  </div>
+</div></div></header>
+
+<nav class="nav"><div class="wrap"><div class="nav-list">
+  <button class="nav-btn on" data-tab="tabela">📊 <span class="lbl">Tabela</span></button>
+  <button class="nav-btn" data-tab="palpites">🎯 <span class="lbl">Palpites</span></button>
+  <button class="nav-btn" data-tab="ranking">🏅 <span class="lbl">Ranking</span></button>
+  <button class="nav-btn" data-tab="admin">🔐 <span class="lbl">Admin</span><span class="adm-dot" id="admDot"></span></button>
+</div></div></nav>
+
+<main class="wrap">
+  <div id="panel-tabela"   class="panel on"></div>
+  <div id="panel-palpites" class="panel"></div>
+  <div id="panel-ranking"  class="panel"></div>
+  <div id="panel-admin"    class="panel"></div>
+</main>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-ov" id="loginModal">
+  <div class="mbox">
+    <button class="m-close" onclick="closeModal('loginModal')">✕</button>
+    <div class="m-ico" id="loginIco">⚽</div>
+    <h2 class="m-ttl" id="loginTtl">BOLÃO 2026</h2>
+    <p class="m-txt">Dê seus palpites e concorra com seus amigos!</p>
+    <input class="inp" id="lName" placeholder="Seu apelido (ex: CraqueBr)" maxlength="20" autocomplete="off">
+    <div class="login-hint" id="loginHint"></div>
+    <input class="inp" id="lPass" type="password" placeholder="Senha (mín. 4 caracteres)">
+    <div class="m-err" id="loginErr"></div>
+    <button class="btn-sub" id="loginBtn" style="margin-top:4px" onclick="doLogin()">🚀 Entrar no Bolão</button>
+    <p class="m-sm" id="loginSm">Primeiro acesso? Sua conta é criada automaticamente.</p>
+  </div>
+</div>
+
+<div class="sync-bar" id="syncBar">
+  <div class="sdot" id="sdot"></div>
+  <span id="sdotTxt">Local</span>
+</div>
+<div id="tc"></div>
+<footer>⚽ Copa do Mundo FIFA 2026 · 48 Seleções · 104 Jogos · 16 Cidades-Sede<br>Todos os horários em BRT (Horário de Brasília) · Sistema de Bolão 🇧🇷</footer>
+
 <script>
 // ══════════════════════════════════════════════════════
 //  ⚙️  CONFIG
 // ══════════════════════════════════════════════════════
-const CFG = {
-  SUPA_URL:  'https://omgcjhvhezcikfjyfonw.supabase.co',
-  SUPA_KEY:  'sb_publishable_06GuHSVCvqZ7OlwgXJdtfw_RwM5d663',
+const CFG={
+  SUPA_URL:'https://omgcjhvhezcikfjyfonw.supabase.co',
+  SUPA_KEY:'sb_publishable_06GuHSVCvqZ7OlwgXJdtfw_RwM5d663',
   ADMIN_PASS:'copa2026',
 };
 
 // ══════════════════════════════════════════════════════
-//  🌐  SUPABASE — conexão + funções
+//  🌐  SUPABASE
 // ══════════════════════════════════════════════════════
-let supa = null;
-try { supa = window.supabase.createClient(CFG.SUPA_URL, CFG.SUPA_KEY); } catch(e){}
+let supa=null;
+try{supa=window.supabase.createClient(CFG.SUPA_URL,CFG.SUPA_KEY);}catch(e){}
 
-function setSyncStatus(state,txt){
-  document.getElementById('sdot').className='sdot '+state;
-  document.getElementById('sdotTxt').textContent=txt;
+function setSyncStatus(s,t){
+  document.getElementById('sdot').className='sdot '+s;
+  document.getElementById('sdotTxt').textContent=t;
 }
 
 // Carrega resultados do banco
 async function syncFromSupabase(){
-  if(!supa) return;
+  if(!supa){setSyncStatus('','Sem BD');return;}
   try{
-    const{data,error}=await supa.from('partidas').select('id,placar_casa,placar_visitante').lte('id',104);
-    if(error) throw error;
+    setSyncStatus('sv','Conectando...');
+    const{data,error}=await supa.from('partidas').select('id,placar_casa,placar_visitante').lte('id',72);
+    if(error)throw error;
     (data||[]).forEach(r=>{
       if(r.placar_casa!==null&&r.placar_visitante!==null)
         ST.results[r.id]={h:r.placar_casa,a:r.placar_visitante};
     });
     save();
     setSyncStatus('ok','Supabase ✓');
+    refreshAllPanels();
     subscribeRT();
-  }catch(e){ setSyncStatus('er','Offline'); }
+  }catch(e){
+    console.error('Supabase sync:',e);
+    setSyncStatus('er','Erro BD');
+  }
 }
 
-// Salva resultado no banco
+// Salva resultado oficial
 async function saveToSupa(id,h,a){
-  if(!supa) return;
+  if(!supa)return;
   setSyncStatus('sv','Salvando...');
   try{
-    await supa.from('partidas').update({placar_casa:h,placar_visitante:a}).eq('id',id);
+    const{error}=await supa.from('partidas').update({placar_casa:h,placar_visitante:a}).eq('id',id);
+    if(error)throw error;
     setSyncStatus('ok','Salvo ✓');
     setTimeout(()=>setSyncStatus('ok','Supabase ✓'),1500);
-  }catch(e){ setSyncStatus('er','Erro'); }
+  }catch(e){setSyncStatus('er','Erro ao salvar');}
 }
 
 // Salva palpite no banco (upsert)
 async function savePredSupa(apelido,partidaId,h,a){
-  if(!supa) return;
+  if(!supa)return;
   try{
-    await supa.from('palpites').upsert(
+    const{error}=await supa.from('palpites').upsert(
       {apelido,partida_id:partidaId,palpite_casa:h,palpite_visitante:a},
       {onConflict:'apelido,partida_id'}
     );
-  }catch(e){}
+    if(error)throw error;
+  }catch(e){console.warn('Erro palpite:',e);}
 }
 
 // Carrega palpites do banco para um usuário
 async function loadPredsFromSupa(apelido){
-  if(!supa) return false;
+  if(!supa)return false;
   try{
     const{data,error}=await supa.from('palpites')
       .select('partida_id,palpite_casa,palpite_visitante')
       .eq('apelido',apelido);
-    if(error) throw error;
-    if(!ST.preds[apelido]) ST.preds[apelido]={};
+    if(error)throw error;
+    if(!ST.preds[apelido])ST.preds[apelido]={};
     (data||[]).forEach(r=>{
       ST.preds[apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
     });
     save();
     return true;
-  }catch(e){ return false; }
+  }catch(e){return false;}
 }
 
-// Migra palpites do localStorage para o Supabase (só na primeira vez)
+// Migra palpites locais → Supabase (ao fazer login)
 async function migrateLocalPreds(apelido){
-  if(!supa) return;
+  if(!supa)return;
   const local=ST.preds[apelido]||{};
-  const entries=Object.entries(local).filter(([,sc])=>sc.h!==null&&sc.h!==undefined);
-  if(!entries.length) return;
+  const entries=Object.entries(local).filter(([,sc])=>sc&&sc.h!==null&&sc.h!==undefined);
+  if(!entries.length)return;
   try{
     const rows=entries.map(([id,sc])=>({
       apelido,partida_id:parseInt(id),palpite_casa:sc.h,palpite_visitante:sc.a
     }));
-    await supa.from('palpites').upsert(rows,{onConflict:'apelido,partida_id'});
-    toast(`☁️ ${rows.length} palpite${rows.length>1?'s':''} salvo${rows.length>1?'s':''} na nuvem!`);
+    const{error}=await supa.from('palpites').upsert(rows,{onConflict:'apelido,partida_id'});
+    if(!error)toast(`☁️ ${rows.length} palpite${rows.length>1?'s':''} sincronizado${rows.length>1?'s':''}!`);
   }catch(e){}
 }
 
-// Carrega + migra dados do usuário ao fazer login
+// Sincroniza palpites ao fazer login: local→nuvem, depois nuvem→local
 async function loadUserData(apelido){
+  if(!supa){renderPalpites();renderRanking();return;}
   setSyncStatus('sv','Sincronizando...');
-  await migrateLocalPreds(apelido);  // 1. envia local → banco
-  await loadPredsFromSupa(apelido);  // 2. carrega banco → local
+  await migrateLocalPreds(apelido);
+  await loadPredsFromSupa(apelido);
   setSyncStatus('ok','Sincronizado ✓');
   renderPalpites();
   renderRanking();
 }
 
-// Real-time: resultados e palpites
+// Realtime: resultados e ranking
 function subscribeRT(){
-  if(!supa) return;
+  if(!supa)return;
+  // Resultados em tempo real
   supa.channel('partidas-rt')
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'partidas'},p=>{
       const r=p.new;
       if(r.placar_casa!==null&&r.placar_visitante!==null)
         ST.results[r.id]={h:r.placar_casa,a:r.placar_visitante};
       else delete ST.results[r.id];
-      save(); refreshAllPanels();
+      save();refreshAllPanels();
       toast('⚽ Placar atualizado ao vivo!');
+    }).subscribe();
+  // Palpites de outros usuários → atualiza ranking/admin
+  supa.channel('palpites-rt')
+    .on('postgres_changes',{event:'*',schema:'public',table:'palpites'},p=>{
+      const r=p.new||p.old;if(!r)return;
+      // Não atualiza palpites do usuário atual (evita conflito com edição)
+      if(ST.user&&r.apelido===ST.user.name)return;
+      if(p.eventType==='DELETE'){
+        if(ST.preds[r.apelido])delete ST.preds[r.apelido][r.partida_id];
+      }else{
+        if(!ST.preds[r.apelido])ST.preds[r.apelido]={};
+        ST.preds[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
+      }
+      save();
+      if(document.querySelector('#panel-ranking.on'))renderRanking();
+      if(document.querySelector('#panel-admin.on')&&ST.admin)renderAdmin();
     }).subscribe();
 }
 
@@ -132,12 +477,12 @@ const FC={
 };
 function fi(t,w=26){
   const c=FC[t],h=Math.round(w*.67);
-  const base=`display:inline-block;width:${w}px;height:${h}px;border-radius:2px;flex-shrink:0;vertical-align:middle;box-shadow:0 1px 3px rgba(0,0,0,.4)`;
-  if(!c) return`<span style="${base};background:rgba(255,255,255,.1)"></span>`;
-  return`<span class="fi fi-${c}" style="${base}"></span>`;
+  const b=`display:inline-block;width:${w}px;height:${h}px;border-radius:2px;flex-shrink:0;vertical-align:middle;box-shadow:0 1px 3px rgba(0,0,0,.4)`;
+  if(!c)return`<span style="${b};background:rgba(255,255,255,.1)"></span>`;
+  return`<span class="fi fi-${c}" style="${b}"></span>`;
 }
 function fiSm(t){
-  const c=FC[t]; if(!c) return'';
+  const c=FC[t];if(!c)return'';
   return`<span class="fi fi-${c}" style="display:inline-block;width:20px;height:14px;border-radius:2px;opacity:.8;vertical-align:middle;box-shadow:0 1px 3px rgba(0,0,0,.4)"></span>`;
 }
 
@@ -238,7 +583,7 @@ const MATCHES=[
 ];
 
 // ══════════════════════════════════════════════════════
-//  💾  ESTADO + PERSISTÊNCIA
+//  💾  ESTADO
 // ══════════════════════════════════════════════════════
 let ST={user:null,admin:false,results:{},preds:{}};
 function load(){
@@ -262,20 +607,20 @@ function setPred(id,h,a){
   if(!ST.user)return;
   if(!ST.preds[ST.user.name])ST.preds[ST.user.name]={};
   ST.preds[ST.user.name][id]={h,a};save();
-  savePredSupa(ST.user.name,id,h,a); // ← salva no banco
+  savePredSupa(ST.user.name,id,h,a); // ☁️ salva no banco
 }
 function delPred(id){
   if(!ST.user)return;
   if(ST.preds[ST.user.name])delete ST.preds[ST.user.name][id];
   save();
-  if(supa) supa.from('palpites').delete().eq('apelido',ST.user.name).eq('partida_id',id).then(()=>{});
+  if(supa)supa.from('palpites').delete().eq('apelido',ST.user.name).eq('partida_id',id).then(()=>{});
 }
 
 // ══════════════════════════════════════════════════════
 //  🏆  PONTUAÇÃO
 // ══════════════════════════════════════════════════════
 function calcPts(pred,res){
-  if(!res)return null; if(!pred)return 0;
+  if(!res)return null;if(!pred)return 0;
   const{h:ph,a:pa}=pred,{h:rh,a:ra}=res;
   if(ph===rh&&pa===ra)return 10;
   const po=ph>pa?'H':ph<pa?'A':'D',ro=rh>ra?'H':rh<ra?'A':'D';
@@ -352,9 +697,9 @@ function renderTabela(){
           let hc='',ac='';
           if(res){const{h,a}=res;hc=h>a?'w':h<a?'l':'d';ac=a>h?'w':a<h?'l':'d';}
           scoreHtml=`<div class="sz">
-            <input type="number" class="sinp ${hc}" data-mid="${m.id}" data-side="h" value="${hv}" min="0" max="30">
+            <input type="number" class="sinp ${hc}" data-mid="${m.id}" data-side="h" value="${hv}" min="0" max="30" inputmode="numeric" pattern="[0-9]*">
             <span class="ssep">:</span>
-            <input type="number" class="sinp ${ac}" data-mid="${m.id}" data-side="a" value="${av}" min="0" max="30">
+            <input type="number" class="sinp ${ac}" data-mid="${m.id}" data-side="a" value="${av}" min="0" max="30" inputmode="numeric" pattern="[0-9]*">
           </div>`;
         }else{
           if(res){const{h,a}=res;const hc=h>a?'sw':h<a?'sl':'sd';const ac=a>h?'sw':a<h?'sl':'sd';
@@ -362,7 +707,7 @@ function renderTabela(){
           }else{scoreHtml=`<div class="sdsp novs">vs</div>`;}
         }
         matchRows+=`<div class="mr${isBr?' brmatch':''}">
-          <div class="m-dt"><div class="m-d">${m.dt}</div><div class="m-t">${m.tm}</div><div class="m-v">🏟 ${m.ci}</div></div>
+          <div class="m-dt"><div class="m-d">${m.dt}</div><div class="m-t">${m.tm}</div><div class="m-v">📍 ${m.ci}</div></div>
           <div class="m-home">${fi(m.h,22)}<span class="t-name">${m.h}</span></div>
           ${scoreHtml}
           <div class="m-away"><span class="t-name">${m.a}</span>${fi(m.a,22)}</div>
@@ -400,7 +745,7 @@ function attachAdminListeners(){
           hI.className=`sinp ${h>a?'w':h<a?'l':'d'}`;
           aI.className=`sinp ${a>h?'w':a<h?'l':'d'}`;
           updateInlineStandings(mid);
-          toast('💾 Resultado salvo no Supabase');
+          toast('💾 Resultado salvo');
         }
       },600);
     });
@@ -432,12 +777,12 @@ function updateInlineStandings(mid){
 }
 
 // ══════════════════════════════════════════════════════
-//  ⏱️  CONTROLE DE TEMPO
+//  ⏱️  CONTROLE DE TEMPO — bloqueio 5 min antes
 // ══════════════════════════════════════════════════════
 function getMatchUTC(m){
   const[d,mo]=m.dt.split('/').map(Number);
   const[h,mn]=m.tm.split(':').map(Number);
-  return new Date(Date.UTC(2026,mo-1,d,h+3,mn));
+  return new Date(Date.UTC(2026,mo-1,d,h+3,mn)); // BRT+3=UTC
 }
 function matchStatus(m){
   const kick=getMatchUTC(m),lock=new Date(kick-5*60*1000),end=new Date(kick+115*60*1000),now=Date.now();
@@ -451,7 +796,7 @@ function fmtCountdown(ms){
 }
 
 // ══════════════════════════════════════════════════════
-//  🎯  RENDER — PALPITES
+//  🎯  RENDER — PALPITES (com bloqueio de tempo)
 // ══════════════════════════════════════════════════════
 function renderPalpites(){
   const el=document.getElementById('panel-palpites');
@@ -465,10 +810,11 @@ function renderPalpites(){
   let html=`<div class="sec-h">🎯 PALPITES — ${escH(ST.user.name)}</div>
   <div class="pts-legend">
     <span class="pleg"><span class="pleg-dot" style="background:var(--gold)"></span>Placar exato = 10 pts</span>
-    <span class="pleg"><span class="pleg-dot" style="background:var(--green)"></span>Resultado correto = 5 pts</span>
+    <span class="pleg"><span class="pleg-dot" style="background:var(--green)"></span>Resultado certo = 5 pts</span>
     <span class="pleg"><span class="pleg-dot" style="background:var(--red)"></span>Errou = 0 pts</span>
     <span class="pleg" style="margin-left:auto;color:var(--dim)">🔒 Fecha 5min antes</span>
   </div><div class="gg">`;
+
   Object.keys(GROUPS).forEach(g=>{
     const brazil=(g==='C');
     const gflags=GROUPS[g].map(t=>fiSm(t)).join(' ');
@@ -493,9 +839,9 @@ function renderPalpites(){
           const ofcl=res?`<div class="ofcl">Oficial<strong>${res.h}:${res.a}</strong></div>`:`<div class="ofcl">${statusBadge||''}</div>`;
           scoreHtml=`<div class="sz" style="flex-direction:column;gap:2px">
             <div style="display:flex;align-items:center;gap:3px">
-              <input type="number" class="sinp" data-pmid="${m.id}" data-side="h" value="${hv}" min="0" max="30" placeholder="?">
+              <input type="number" class="sinp" data-pmid="${m.id}" data-side="h" value="${hv}" min="0" max="30" placeholder="?" inputmode="numeric" pattern="[0-9]*">
               <span class="ssep">:</span>
-              <input type="number" class="sinp" data-pmid="${m.id}" data-side="a" value="${av}" min="0" max="30" placeholder="?">
+              <input type="number" class="sinp" data-pmid="${m.id}" data-side="a" value="${av}" min="0" max="30" placeholder="?" inputmode="numeric" pattern="[0-9]*">
             </div>${ofcl}</div>`;
         }
         rows+=`<div class="pred-row${locked?' locked':''}${isBr?' brmatch':''}">
@@ -529,48 +875,47 @@ function renderPalpites(){
           const pp2=calcPts({h,a},getRes(mid));
           const badge=row.querySelector('.pts-badge');
           if(badge){badge.className='pts-badge '+pClass(pp2);badge.textContent=pLabel(pp2);}
-          toast('💾 Palpite salvo na nuvem ☁️');
+          toast('💾 Palpite salvo ☁️');
         }
       },600);
     });
   });
+  // Auto-refresh a cada 60s para atualizar contadores e bloqueios
   clearTimeout(window._palpTimer);
   window._palpTimer=setTimeout(()=>{if(document.querySelector('#panel-palpites.on'))renderPalpites();},60000);
 }
 
 // ══════════════════════════════════════════════════════
-//  🏅  RENDER — RANKING (usa Supabase v_ranking)
+//  🏅  RENDER — RANKING (Supabase + fallback local)
 // ══════════════════════════════════════════════════════
 async function renderRanking(){
   const el=document.getElementById('panel-ranking');
-  el.innerHTML=`<div class="sec-h">🏅 RANKING</div><div style="padding:20px;text-align:center;color:var(--muted)">Carregando...</div>`;
-  let lb=[];
-  // Tenta carregar do Supabase (ranking global com pontos calculados pelo banco)
+  el.innerHTML=`<div class="sec-h">🏅 RANKING</div><div style="padding:24px;text-align:center;color:var(--muted)">Calculando...</div>`;
+  let lb=[],isCloud=false;
+  // Tenta v_ranking do Supabase (ranking global com todos os dispositivos)
   if(supa){
     try{
-      const{data,error}=await supa.from('v_ranking').select('*');
+      const{data,error}=await supa.from('v_ranking').select('*').limit(100);
       if(!error&&data&&data.length>0){
         lb=data.map(r=>({
           u:r.apelido,total:Number(r.total_pontos)||0,
           ct:Number(r.total_palpites)||0,
-          ct10:Number(r.placares_exatos)||0,
-          ct5:Number(r.resultados_certos)||0,
-          source:'cloud'
+          ct10:Number(r.placares_exatos)||0
         }));
+        isCloud=true;
       }
     }catch(e){}
   }
-  // Fallback local
+  // Fallback: cálculo local
   if(!lb.length){
     const allU=[...new Set([...Object.keys(ST.preds),...(ST.user?[ST.user.name]:[])])];
     lb=allU.map(u=>{
-      let total=0,ct=0;
-      MATCHES.forEach(m=>{const pr=(ST.preds[u]||{})[m.id];if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null)total+=pp;}});
-      return{u,total,ct,source:'local'};
+      let total=0,ct=0,ct10=0;
+      MATCHES.forEach(m=>{const pr=(ST.preds[u]||{})[m.id];if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null){total+=pp;if(pp===10)ct10++;}}});
+      return{u,total,ct,ct10};
     }).sort((a,b)=>b.total-a.total||b.ct-a.ct);
   }
   const medals=['🥇','🥈','🥉'];
-  const isCloud=lb[0]?.source==='cloud';
   const rows=lb.map((x,i)=>{
     const me=ST.user&&x.u===ST.user.name;
     return`<div class="rk-row${me?' me':''}">
@@ -583,14 +928,14 @@ async function renderRanking(){
       </div>
     </div>`;}).join('');
   el.innerHTML=`<div class="sec-h">🏅 RANKING</div>
-  <div class="rk-card">${rows||'<div style="padding:24px;text-align:center;color:var(--muted)">Nenhum palpite registrado ainda.</div>'}</div>
+  <div class="rk-card">${rows||'<div style="padding:24px;text-align:center;color:var(--muted)">Nenhum palpite ainda.</div>'}</div>
   <p style="text-align:center;font-size:.63rem;color:var(--dim);margin-top:8px">
-    ${isCloud?'☁️ Ranking global — Supabase':'💾 Ranking local — entre para ver o ranking global'}
+    ${isCloud?'☁️ Ranking global — todos os dispositivos':'💾 Ranking local — faça login para ranking global'}
   </p>`;
 }
 
 // ══════════════════════════════════════════════════════
-//  🌐  ESPN — BUSCA AUTOMÁTICA DE RESULTADOS
+//  🌐  ESPN — RESULTADOS AUTOMÁTICOS
 // ══════════════════════════════════════════════════════
 const ESPN_MAP={
   'Brazil':'Brasil','Morocco':'Marrocos','Haiti':'Haiti','Scotland':'Escócia',
@@ -611,12 +956,10 @@ const ESPN_MAP={
   'Colombia':'Colômbia','England':'Inglaterra','Croatia':'Croácia','Ghana':'Gana','Panama':'Panamá',
 };
 function espnName(n){return ESPN_MAP[n]||n;}
-
 let espnTimer=null,lastEspnFetch=null,espnCount=0;
 
 async function fetchEspn(silent=false){
   let updated=0;
-  // Busca hoje + últimos 7 dias
   const dates=[];
   for(let i=0;i<=7;i++){
     const d=new Date(Date.now()-i*86400000);
@@ -656,19 +999,20 @@ async function fetchEspn(silent=false){
 }
 
 function startEspn(){
-  fetchEspn(false);
+  fetchEspn(true);
   clearInterval(espnTimer);
-  espnTimer=setInterval(()=>fetchEspn(true),45000); // 45 seg
+  espnTimer=setInterval(()=>fetchEspn(true),45000); // 45 segundos
 }
+
 function updateEspnDot(){
   const dot=document.getElementById('liveDot'),txt=document.getElementById('liveTxt');
-  if(!dot)return;
+  if(!dot||!txt)return;
   dot.className='auto-dot on';
   txt.textContent=lastEspnFetch?'ESPN ✓ '+lastEspnFetch.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'ESPN buscando...';
 }
 
 // ══════════════════════════════════════════════════════
-//  👥  ADMIN — participantes
+//  👥  ADMIN — PARTICIPANTES
 // ══════════════════════════════════════════════════════
 function getAllUsers(){
   const u=[];
@@ -676,24 +1020,27 @@ function getAllUsers(){
   return u;
 }
 function deleteUser(name){
-  if(!confirm(`Excluir "${name}" e todos os palpites?`))return;
+  if(!confirm(`Excluir "${name}" e todos os palpites? Não tem como desfazer!`))return;
   localStorage.removeItem('c26_acc_'+name);
   if(ST.preds[name]){delete ST.preds[name];save();}
   if(supa)supa.from('palpites').delete().eq('apelido',name).then(()=>{});
   if(ST.user&&ST.user.name===name){ST.user=null;save();updateAuthUI();}
-  renderAdmin();toast(`🗑️ "${name}" removido`);
+  renderAdmin();renderRanking();
+  toast(`🗑️ "${name}" removido`);
 }
 function resetPreds(name){
-  if(!confirm(`Zerar palpites de "${name}"?`))return;
+  if(!confirm(`Zerar todos os palpites de "${name}"?`))return;
   if(ST.preds[name]){delete ST.preds[name];save();}
   if(supa)supa.from('palpites').delete().eq('apelido',name).then(()=>{});
-  renderAdmin();toast(`🔄 Palpites de "${name}" zerados`);
+  renderAdmin();renderRanking();
+  toast(`🔄 Palpites de "${name}" zerados`);
 }
 function resetAllResults(){
-  if(!confirm('⚠️ Zerar TODOS os resultados? Não pode desfazer.'))return;
+  if(!confirm('⚠️ Zerar TODOS os resultados oficiais? Isso não pode ser desfeito!'))return;
   ST.results={};save();
-  if(supa)supa.from('partidas').update({placar_casa:null,placar_visitante:null}).lte('id',104).then(()=>{});
-  refreshAllPanels();toast('🗑️ Resultados zerados');
+  if(supa)supa.from('partidas').update({placar_casa:null,placar_visitante:null}).lte('id',72).then(()=>{});
+  refreshAllPanels();
+  toast('🗑️ Todos os resultados foram zerados');
 }
 
 // ══════════════════════════════════════════════════════
@@ -725,11 +1072,14 @@ function renderAdmin(){
     ?`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nenhum participante cadastrado.</td></tr>`
     :lb.map((x,i)=>`<tr>
       <td><strong style="color:${i<3?['var(--gold)','#bbb','#c08040'][i]:'var(--text)'}">${i<3?medals[i]:i+1}</strong></td>
-      <td><div style="display:flex;align-items:center;gap:8px"><div class="part-av">${x.u[0].toUpperCase()}</div>
-        <span>${escH(x.u)}${ST.user&&x.u===ST.user.name?' <span style="font-size:.58rem;color:var(--green)">(você)</span>':''}</span>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div class="part-av">${x.u[0].toUpperCase()}</div>
+        <span style="font-size:.8rem;font-weight:600">${escH(x.u)}${ST.user&&x.u===ST.user.name?' <span style="font-size:.58rem;color:var(--green)">(você)</span>':''}</span>
       </div></td>
       <td><strong style="color:var(--gold)">${x.pts}</strong></td>
-      <td>${x.ct}</td><td style="color:var(--gold)">${x.ct10}</td><td style="color:var(--green)">${x.ct5}</td>
+      <td>${x.ct}</td>
+      <td style="color:var(--gold)">${x.ct10}</td>
+      <td style="color:var(--green)">${x.ct5}</td>
       <td style="display:flex;gap:5px;flex-wrap:wrap">
         <button class="act-btn rst" onclick="resetPreds('${escH(x.u)}')">🔄 Zerar</button>
         <button class="act-btn del" onclick="deleteUser('${escH(x.u)}')">🗑️ Excluir</button>
@@ -740,18 +1090,17 @@ function renderAdmin(){
   <div class="sec-h">🔐 MODO ADMIN ATIVO</div>
   <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
     <div class="adm-badge" style="background:rgba(0,196,71,.14);border-color:var(--brd-g);color:var(--gl)">✅ Admin Ativo</div>
-    <button class="btn-sub ghost" style="width:auto;padding:8px 16px;font-size:.75rem" onclick="exitAdmin()">🔒 Sair</button>
+    <button class="btn-sub ghost" style="width:auto;padding:8px 16px;font-size:.75rem;touch-action:manipulation" onclick="exitAdmin()">🔒 Sair do Admin</button>
   </div>
 
-  <!-- STATUS -->
   <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:22px;font-size:.78rem;line-height:2">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
       <div>
         🔄 Supabase: <strong style="color:${supa?'var(--gl)':'var(--red)'}">${supa?'✅ Conectado':'❌ Não conectado'}</strong>
-        &nbsp;|&nbsp; 
-        ⚽ ESPN Auto: <span style="display:inline-flex;align-items:center;gap:4px">
+        &nbsp;|&nbsp;
+        ⚽ ESPN: <span style="display:inline-flex;align-items:center;gap:4px">
           <span class="auto-dot on" id="liveDot"></span>
-          <span id="liveTxt" style="font-size:.68rem;color:var(--muted)">Ativo</span>
+          <span id="liveTxt" style="font-size:.68rem;color:var(--muted)">Ativo (45s)</span>
         </span>
       </div>
       <div style="display:flex;gap:6px">
@@ -759,24 +1108,25 @@ function renderAdmin(){
         <button class="act-btn del" onclick="resetAllResults()">🗑️ Zerar Resultados</button>
       </div>
     </div>
-    <div style="font-size:.66rem;color:var(--dim);margin-top:6px">
-      ⚡ ESPN busca resultados a cada 45 segundos automaticamente durante a Copa.<br>
-      ✏️ Para editar resultados manualmente, vá para a aba 📊 Tabela.
+    <div style="font-size:.66rem;color:var(--dim);margin-top:6px;line-height:1.6">
+      ⚡ ESPN busca automaticamente a cada 45 segundos durante a Copa (11 Jun – 19 Jul 2026).<br>
+      ✏️ Para editar resultados manualmente: aba 📊 <strong style="color:var(--text)">Tabela</strong> (modo admin ativo).
     </div>
   </div>
 
-  <!-- PARTICIPANTES -->
   <div class="sec-h" style="font-size:1.4rem">👥 PARTICIPANTES
-    <span style="font-family:var(--fb);font-size:.73rem;color:var(--muted)">${lb.length} cadastrado${lb.length!==1?'s':''}</span>
+    <span style="font-family:var(--fb);font-size:.73rem;color:var(--muted);letter-spacing:0;font-weight:400">${lb.length} cadastrado${lb.length!==1?'s':''}</span>
   </div>
   <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:auto;margin-bottom:10px">
     <table class="part-table">
-      <thead><tr><th>#</th><th>Participante</th><th>Pts</th><th>Palpites</th><th>🎯 Exatos</th><th>✅ Certos</th><th>Ações</th></tr></thead>
+      <thead><tr>
+        <th>#</th><th>Participante</th><th>Pts</th><th>Palpites</th><th>🎯 Exatos</th><th>✅ Certos</th><th>Ações</th>
+      </tr></thead>
       <tbody>${partRows}</tbody>
     </table>
   </div>
   <p style="font-size:.64rem;color:var(--dim);margin-bottom:22px">
-    🔄 Zerar — apaga palpites mas mantém conta &nbsp;|&nbsp; 🗑️ Excluir — remove conta e palpites do banco
+    🔄 Zerar — apaga palpites mas mantém a conta &nbsp;|&nbsp; 🗑️ Excluir — remove conta e palpites permanentemente
   </p>`;
 
   document.getElementById('admDot').classList.add('show');
@@ -795,7 +1145,7 @@ function exitAdmin(){ST.admin=false;renderAdmin();renderTabela();toast('🔒 Adm
 // ══════════════════════════════════════════════════════
 function openLogin(){
   document.getElementById('loginModal').classList.add('open');
-  document.getElementById('lName').focus();
+  setTimeout(()=>document.getElementById('lName').focus(),100);
   document.getElementById('loginHint').textContent='';
   updateLoginUI('');
 }
@@ -833,8 +1183,7 @@ function doLogin(){
   ST.user={name};save();closeModal('loginModal');
   document.getElementById('lName').value='';document.getElementById('lPass').value='';
   updateAuthUI();
-  // Sincroniza palpites com Supabase
-  loadUserData(name);
+  loadUserData(name); // ☁️ sincroniza palpites com Supabase
 }
 function doLogout(){
   if(!confirm('Sair do bolão?'))return;
@@ -882,7 +1231,9 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
     window.scrollTo({top:0,behavior:'smooth'});
   });
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal('loginModal');});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')document.querySelectorAll('.modal-ov.open').forEach(m=>closeModal(m.id));
+});
 document.querySelectorAll('.modal-ov').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);}));
 document.getElementById('lPass').addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('lName').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('lPass').focus();});
@@ -894,16 +1245,9 @@ document.getElementById('lName').addEventListener('input',e=>updateLoginUI(e.tar
 load();
 updateAuthUI();
 renderTabela();
-// Carrega resultados do Supabase
-if(supa){
-  syncFromSupabase();
-}else{
-  setSyncStatus('','Sem Supabase');
-}
-// ESPN automático — 45s (Copa está acontecendo agora!)
-startEspn();
-// Se já estava logado, sincroniza palpites
-if(ST.user) loadUserData(ST.user.name);
+if(supa){syncFromSupabase();}else{setSyncStatus('','Sem Supabase');}
+startEspn(); // inicia busca automática ESPN
+if(ST.user)loadUserData(ST.user.name); // sincroniza palpites do usuário logado
 </script>
 </body>
 </html>
