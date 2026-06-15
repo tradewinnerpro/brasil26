@@ -126,7 +126,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
 .t-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:105px}
 .sz{display:flex;align-items:center;gap:3px;justify-content:center}
 .ssep{font-weight:800;font-size:.82rem;color:var(--muted)}
-/* ✅ MOBILE FIX: touch-action + font-size >= 16px evita zoom no iOS */
 .sinp{width:38px;height:40px;background:rgba(0,0,0,.5);border:1.5px solid var(--border);
   border-radius:8px;color:var(--text);font-family:var(--fh);font-size:1.08rem;
   letter-spacing:1px;text-align:center;outline:none;transition:all .2s;
@@ -221,7 +220,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
 .m-ico{font-size:2.6rem;margin-bottom:8px}
 .m-ttl{font-family:var(--fh);font-size:1.7rem;letter-spacing:.06em;margin-bottom:5px}
 .m-txt{color:var(--muted);font-size:.76rem;margin-bottom:16px}
-/* ✅ MOBILE FIX: font-size 1rem evita zoom no iOS */
 .inp{width:100%;padding:11px 13px;background:rgba(0,0,0,.5);
   border:1.5px solid var(--border);border-radius:9px;color:var(--text);
   font-family:var(--fb);font-size:1rem;outline:none;transition:border-color .2s;margin-bottom:9px}
@@ -257,7 +255,7 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
   .mr{grid-template-columns:50px 1fr 82px 1fr;padding:7px 10px;gap:5px}
   .pred-row{grid-template-columns:50px 1fr 96px 1fr 36px;padding:7px 10px;gap:5px}
   .t-name{max-width:70px}.m-home,.m-away{font-size:.7rem}
-  .sinp{width:36px;height:40px;font-size:1rem} /* ✅ 1rem = 16px = sem zoom iOS */
+  .sinp{width:36px;height:40px;font-size:1rem}
   .sdsp{font-size:.88rem;min-width:62px}.nav-btn .lbl{display:none}
   .m-v{display:none}
 }
@@ -372,19 +370,29 @@ async function saveToSupa(id,h,a){
   }catch(e){setSyncStatus('er','Erro ao salvar');}
 }
 
-// Salva palpite no banco (upsert)
+// ✅ FIX: Salva palpite via delete + insert (evita dependência de UNIQUE constraint)
 async function savePredSupa(apelido,partidaId,h,a){
   if(!supa)return;
+  setSyncStatus('sv','Salvando palpite...');
   try{
-    const{error}=await supa.from('palpites').upsert(
-      {apelido,partida_id:partidaId,palpite_casa:h,palpite_visitante:a},
-      {onConflict:'apelido,partida_id'}
-    );
+    // Remove registro anterior (sem erro se não existir)
+    await supa.from('palpites')
+      .delete()
+      .eq('apelido',apelido)
+      .eq('partida_id',partidaId);
+    // Insere o novo
+    const{error}=await supa.from('palpites')
+      .insert({apelido,partida_id:partidaId,palpite_casa:h,palpite_visitante:a});
     if(error)throw error;
-  }catch(e){console.warn('Erro palpite:',e);}
+    setSyncStatus('ok','Palpite salvo ✓');
+    setTimeout(()=>setSyncStatus('ok','Supabase ✓'),2000);
+  }catch(e){
+    console.warn('Erro ao salvar palpite:',e);
+    setSyncStatus('er','Erro ao salvar palpite');
+  }
 }
 
-// Carrega palpites do banco para um usuário
+// Carrega palpites do banco para um usuário específico
 async function loadPredsFromSupa(apelido){
   if(!supa)return false;
   try{
@@ -401,19 +409,49 @@ async function loadPredsFromSupa(apelido){
   }catch(e){return false;}
 }
 
-// Migra palpites locais → Supabase (ao fazer login)
+// ✅ FIX NOVO: Carrega palpites de TODOS os usuários (para ranking global)
+async function loadAllPredsFromSupa(){
+  if(!supa)return false;
+  try{
+    const{data,error}=await supa.from('palpites')
+      .select('apelido,partida_id,palpite_casa,palpite_visitante');
+    if(error)throw error;
+    (data||[]).forEach(r=>{
+      if(!ST.preds[r.apelido])ST.preds[r.apelido]={};
+      // Preserva palpites locais do usuário atual (edições ainda não enviadas)
+      const isCurrentUser=ST.user&&r.apelido===ST.user.name;
+      const hasLocalEdit=isCurrentUser&&(ST.preds[r.apelido][r.partida_id]!==undefined);
+      if(!hasLocalEdit){
+        ST.preds[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
+      }
+    });
+    save();
+    return true;
+  }catch(e){
+    console.warn('loadAllPreds:',e);
+    return false;
+  }
+}
+
+// ✅ FIX: Migra palpites locais usando delete+insert
 async function migrateLocalPreds(apelido){
   if(!supa)return;
   const local=ST.preds[apelido]||{};
   const entries=Object.entries(local).filter(([,sc])=>sc&&sc.h!==null&&sc.h!==undefined);
   if(!entries.length)return;
   try{
-    const rows=entries.map(([id,sc])=>({
-      apelido,partida_id:parseInt(id),palpite_casa:sc.h,palpite_visitante:sc.a
-    }));
-    const{error}=await supa.from('palpites').upsert(rows,{onConflict:'apelido,partida_id'});
-    if(!error)toast(`☁️ ${rows.length} palpite${rows.length>1?'s':''} sincronizado${rows.length>1?'s':''}!`);
-  }catch(e){}
+    for(const [id,sc] of entries){
+      await supa.from('palpites').delete()
+        .eq('apelido',apelido).eq('partida_id',parseInt(id));
+      await supa.from('palpites').insert({
+        apelido,
+        partida_id:parseInt(id),
+        palpite_casa:sc.h,
+        palpite_visitante:sc.a
+      });
+    }
+    toast(`☁️ ${entries.length} palpite${entries.length>1?'s':''} sincronizado${entries.length>1?'s':''}!`);
+  }catch(e){console.warn('Migração:',e);}
 }
 
 // Sincroniza palpites ao fazer login: local→nuvem, depois nuvem→local
@@ -430,7 +468,6 @@ async function loadUserData(apelido){
 // Realtime: resultados e ranking
 function subscribeRT(){
   if(!supa)return;
-  // Resultados em tempo real
   supa.channel('partidas-rt')
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'partidas'},p=>{
       const r=p.new;
@@ -440,11 +477,9 @@ function subscribeRT(){
       save();refreshAllPanels();
       toast('⚽ Placar atualizado ao vivo!');
     }).subscribe();
-  // Palpites de outros usuários → atualiza ranking/admin
   supa.channel('palpites-rt')
     .on('postgres_changes',{event:'*',schema:'public',table:'palpites'},p=>{
       const r=p.new||p.old;if(!r)return;
-      // Não atualiza palpites do usuário atual (evita conflito com edição)
       if(ST.user&&r.apelido===ST.user.name)return;
       if(p.eventType==='DELETE'){
         if(ST.preds[r.apelido])delete ST.preds[r.apelido][r.partida_id];
@@ -607,7 +642,7 @@ function setPred(id,h,a){
   if(!ST.user)return;
   if(!ST.preds[ST.user.name])ST.preds[ST.user.name]={};
   ST.preds[ST.user.name][id]={h,a};save();
-  savePredSupa(ST.user.name,id,h,a); // ☁️ salva no banco
+  savePredSupa(ST.user.name,id,h,a);
 }
 function delPred(id){
   if(!ST.user)return;
@@ -782,7 +817,7 @@ function updateInlineStandings(mid){
 function getMatchUTC(m){
   const[d,mo]=m.dt.split('/').map(Number);
   const[h,mn]=m.tm.split(':').map(Number);
-  return new Date(Date.UTC(2026,mo-1,d,h+3,mn)); // BRT+3=UTC
+  return new Date(Date.UTC(2026,mo-1,d,h+3,mn));
 }
 function matchStatus(m){
   const kick=getMatchUTC(m),lock=new Date(kick-5*60*1000),end=new Date(kick+115*60*1000),now=Date.now();
@@ -796,7 +831,7 @@ function fmtCountdown(ms){
 }
 
 // ══════════════════════════════════════════════════════
-//  🎯  RENDER — PALPITES (com bloqueio de tempo)
+//  🎯  RENDER — PALPITES
 // ══════════════════════════════════════════════════════
 function renderPalpites(){
   const el=document.getElementById('panel-palpites');
@@ -880,41 +915,49 @@ function renderPalpites(){
       },600);
     });
   });
-  // Auto-refresh a cada 60s para atualizar contadores e bloqueios
   clearTimeout(window._palpTimer);
   window._palpTimer=setTimeout(()=>{if(document.querySelector('#panel-palpites.on'))renderPalpites();},60000);
 }
 
 // ══════════════════════════════════════════════════════
-//  🏅  RENDER — RANKING (Supabase + fallback local)
+//  🏅  RENDER — RANKING ✅ CORRIGIDO
+//  Carrega TODOS os palpites do banco antes de calcular
 // ══════════════════════════════════════════════════════
 async function renderRanking(){
   const el=document.getElementById('panel-ranking');
-  el.innerHTML=`<div class="sec-h">🏅 RANKING</div><div style="padding:24px;text-align:center;color:var(--muted)">Calculando...</div>`;
-  let lb=[],isCloud=false;
-  // Tenta v_ranking do Supabase (ranking global com todos os dispositivos)
+  el.innerHTML=`<div class="sec-h">🏅 RANKING</div>
+    <div style="padding:50px 20px;text-align:center;color:var(--muted)">
+      <div style="font-size:2rem;margin-bottom:10px">⏳</div>
+      <div style="font-size:.82rem">Carregando ranking global...</div>
+    </div>`;
+
+  // ✅ CORREÇÃO PRINCIPAL: carrega palpites de todos do banco antes de calcular
+  let isCloud=false;
   if(supa){
-    try{
-      const{data,error}=await supa.from('v_ranking').select('*').limit(100);
-      if(!error&&data&&data.length>0){
-        lb=data.map(r=>({
-          u:r.apelido,total:Number(r.total_pontos)||0,
-          ct:Number(r.total_palpites)||0,
-          ct10:Number(r.placares_exatos)||0
-        }));
-        isCloud=true;
+    isCloud=await loadAllPredsFromSupa();
+  }
+
+  // Monta lista de todos os participantes com palpites
+  const allU=[...new Set([...Object.keys(ST.preds),...(ST.user?[ST.user.name]:[])])];
+  const lb=allU.map(u=>{
+    let total=0,ct=0,ct10=0,ct5=0;
+    MATCHES.forEach(m=>{
+      const pr=(ST.preds[u]||{})[m.id];
+      if(pr){
+        ct++;
+        const pp=calcPts(pr,getRes(m.id));
+        if(pp!==null){
+          total+=pp;
+          if(pp===10)ct10++;
+          if(pp===5)ct5++;
+        }
       }
-    }catch(e){}
-  }
-  // Fallback: cálculo local
-  if(!lb.length){
-    const allU=[...new Set([...Object.keys(ST.preds),...(ST.user?[ST.user.name]:[])])];
-    lb=allU.map(u=>{
-      let total=0,ct=0,ct10=0;
-      MATCHES.forEach(m=>{const pr=(ST.preds[u]||{})[m.id];if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null){total+=pp;if(pp===10)ct10++;}}});
-      return{u,total,ct,ct10};
-    }).sort((a,b)=>b.total-a.total||b.ct-a.ct);
-  }
+    });
+    return{u,total,ct,ct10,ct5};
+  })
+  .filter(x=>x.ct>0)
+  .sort((a,b)=>b.total-a.total||b.ct10-a.ct10||b.ct5-a.ct5||b.ct-a.ct);
+
   const medals=['🥇','🥈','🥉'];
   const rows=lb.map((x,i)=>{
     const me=ST.user&&x.u===ST.user.name;
@@ -924,13 +967,18 @@ async function renderRanking(){
       <div class="rk-name">${escH(x.u)}${me?'<span class="rk-me">você</span>':''}</div>
       <div style="text-align:right">
         <div class="rk-pts">${x.total}</div>
-        <div class="rk-sub">${x.ct} palpite${x.ct!==1?'s':''}${x.ct10?' · '+x.ct10+'🎯':''}</div>
+        <div class="rk-sub">${x.ct} palpite${x.ct!==1?'s':''}${x.ct10?' · 🎯'+x.ct10:''}${x.ct5?' · ✅'+x.ct5:''}</div>
       </div>
-    </div>`;}).join('');
+    </div>`;
+  }).join('');
+
   el.innerHTML=`<div class="sec-h">🏅 RANKING</div>
-  <div class="rk-card">${rows||'<div style="padding:24px;text-align:center;color:var(--muted)">Nenhum palpite ainda.</div>'}</div>
-  <p style="text-align:center;font-size:.63rem;color:var(--dim);margin-top:8px">
-    ${isCloud?'☁️ Ranking global — todos os dispositivos':'💾 Ranking local — faça login para ranking global'}
+  <div class="rk-card">${rows||'<div style="padding:30px;text-align:center;color:var(--muted)">Nenhum palpite registrado ainda.</div>'}</div>
+  <p style="text-align:center;font-size:.63rem;color:var(--dim);margin-top:10px">
+    ${isCloud
+      ?'☁️ Ranking global · todos os participantes do banco'
+      :'💾 Ranking local · entre para ver o ranking global'}
+    &nbsp;·&nbsp; 🎯 Placar exato (+10) &nbsp;·&nbsp; ✅ Resultado (+5)
   </p>`;
 }
 
@@ -1001,7 +1049,7 @@ async function fetchEspn(silent=false){
 function startEspn(){
   fetchEspn(true);
   clearInterval(espnTimer);
-  espnTimer=setInterval(()=>fetchEspn(true),45000); // 45 segundos
+  espnTimer=setInterval(()=>fetchEspn(true),45000);
 }
 
 function updateEspnDot(){
@@ -1183,7 +1231,7 @@ function doLogin(){
   ST.user={name};save();closeModal('loginModal');
   document.getElementById('lName').value='';document.getElementById('lPass').value='';
   updateAuthUI();
-  loadUserData(name); // ☁️ sincroniza palpites com Supabase
+  loadUserData(name);
 }
 function doLogout(){
   if(!confirm('Sair do bolão?'))return;
@@ -1245,9 +1293,14 @@ document.getElementById('lName').addEventListener('input',e=>updateLoginUI(e.tar
 load();
 updateAuthUI();
 renderTabela();
-if(supa){syncFromSupabase();}else{setSyncStatus('','Sem Supabase');}
-startEspn(); // inicia busca automática ESPN
-if(ST.user)loadUserData(ST.user.name); // sincroniza palpites do usuário logado
+if(supa){
+  syncFromSupabase();           // carrega resultados
+  loadAllPredsFromSupa();       // ✅ carrega palpites de todos (ranking funciona sem login)
+}else{
+  setSyncStatus('','Sem Supabase');
+}
+startEspn();
+if(ST.user)loadUserData(ST.user.name);
 </script>
 </body>
 </html>
