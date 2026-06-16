@@ -126,6 +126,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
 .t-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:105px}
 .sz{display:flex;align-items:center;gap:3px;justify-content:center}
 .ssep{font-weight:800;font-size:.82rem;color:var(--muted)}
+/* ✅ MOBILE FIX: touch-action + font-size >= 16px evita zoom no iOS */
 .sinp{width:38px;height:40px;background:rgba(0,0,0,.5);border:1.5px solid var(--border);
   border-radius:8px;color:var(--text);font-family:var(--fh);font-size:1.08rem;
   letter-spacing:1px;text-align:center;outline:none;transition:all .2s;
@@ -220,6 +221,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
 .m-ico{font-size:2.6rem;margin-bottom:8px}
 .m-ttl{font-family:var(--fh);font-size:1.7rem;letter-spacing:.06em;margin-bottom:5px}
 .m-txt{color:var(--muted);font-size:.76rem;margin-bottom:16px}
+/* ✅ MOBILE FIX: font-size 1rem evita zoom no iOS */
 .inp{width:100%;padding:11px 13px;background:rgba(0,0,0,.5);
   border:1.5px solid var(--border);border-radius:9px;color:var(--text);
   font-family:var(--fb);font-size:1rem;outline:none;transition:border-color .2s;margin-bottom:9px}
@@ -255,7 +257,7 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
   .mr{grid-template-columns:50px 1fr 82px 1fr;padding:7px 10px;gap:5px}
   .pred-row{grid-template-columns:50px 1fr 96px 1fr 36px;padding:7px 10px;gap:5px}
   .t-name{max-width:70px}.m-home,.m-away{font-size:.7rem}
-  .sinp{width:36px;height:40px;font-size:1rem}
+  .sinp{width:36px;height:40px;font-size:1rem} /* ✅ 1rem = 16px = sem zoom iOS */
   .sdsp{font-size:.88rem;min-width:62px}.nav-btn .lbl{display:none}
   .m-v{display:none}
 }
@@ -370,29 +372,19 @@ async function saveToSupa(id,h,a){
   }catch(e){setSyncStatus('er','Erro ao salvar');}
 }
 
-// ✅ FIX: Salva palpite via delete + insert (evita dependência de UNIQUE constraint)
+// Salva palpite no banco (upsert)
 async function savePredSupa(apelido,partidaId,h,a){
   if(!supa)return;
-  setSyncStatus('sv','Salvando palpite...');
   try{
-    // Remove registro anterior (sem erro se não existir)
-    await supa.from('palpites')
-      .delete()
-      .eq('apelido',apelido)
-      .eq('partida_id',partidaId);
-    // Insere o novo
-    const{error}=await supa.from('palpites')
-      .insert({apelido,partida_id:partidaId,palpite_casa:h,palpite_visitante:a});
+    const{error}=await supa.from('palpites').upsert(
+      {apelido,partida_id:partidaId,palpite_casa:h,palpite_visitante:a},
+      {onConflict:'apelido,partida_id'}
+    );
     if(error)throw error;
-    setSyncStatus('ok','Palpite salvo ✓');
-    setTimeout(()=>setSyncStatus('ok','Supabase ✓'),2000);
-  }catch(e){
-    console.warn('Erro ao salvar palpite:',e);
-    setSyncStatus('er','Erro ao salvar palpite');
-  }
+  }catch(e){console.warn('Erro palpite:',e);}
 }
 
-// Carrega palpites do banco para um usuário específico
+// Carrega palpites do banco para um usuário
 async function loadPredsFromSupa(apelido){
   if(!supa)return false;
   try{
@@ -409,49 +401,19 @@ async function loadPredsFromSupa(apelido){
   }catch(e){return false;}
 }
 
-// ✅ FIX NOVO: Carrega palpites de TODOS os usuários (para ranking global)
-async function loadAllPredsFromSupa(){
-  if(!supa)return false;
-  try{
-    const{data,error}=await supa.from('palpites')
-      .select('apelido,partida_id,palpite_casa,palpite_visitante');
-    if(error)throw error;
-    (data||[]).forEach(r=>{
-      if(!ST.preds[r.apelido])ST.preds[r.apelido]={};
-      // Preserva palpites locais do usuário atual (edições ainda não enviadas)
-      const isCurrentUser=ST.user&&r.apelido===ST.user.name;
-      const hasLocalEdit=isCurrentUser&&(ST.preds[r.apelido][r.partida_id]!==undefined);
-      if(!hasLocalEdit){
-        ST.preds[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
-      }
-    });
-    save();
-    return true;
-  }catch(e){
-    console.warn('loadAllPreds:',e);
-    return false;
-  }
-}
-
-// ✅ FIX: Migra palpites locais usando delete+insert
+// Migra palpites locais → Supabase (ao fazer login)
 async function migrateLocalPreds(apelido){
   if(!supa)return;
   const local=ST.preds[apelido]||{};
   const entries=Object.entries(local).filter(([,sc])=>sc&&sc.h!==null&&sc.h!==undefined);
   if(!entries.length)return;
   try{
-    for(const [id,sc] of entries){
-      await supa.from('palpites').delete()
-        .eq('apelido',apelido).eq('partida_id',parseInt(id));
-      await supa.from('palpites').insert({
-        apelido,
-        partida_id:parseInt(id),
-        palpite_casa:sc.h,
-        palpite_visitante:sc.a
-      });
-    }
-    toast(`☁️ ${entries.length} palpite${entries.length>1?'s':''} sincronizado${entries.length>1?'s':''}!`);
-  }catch(e){console.warn('Migração:',e);}
+    const rows=entries.map(([id,sc])=>({
+      apelido,partida_id:parseInt(id),palpite_casa:sc.h,palpite_visitante:sc.a
+    }));
+    const{error}=await supa.from('palpites').upsert(rows,{onConflict:'apelido,partida_id'});
+    if(!error)toast(`☁️ ${rows.length} palpite${rows.length>1?'s':''} sincronizado${rows.length>1?'s':''}!`);
+  }catch(e){}
 }
 
 // Sincroniza palpites ao fazer login: local→nuvem, depois nuvem→local
@@ -468,6 +430,7 @@ async function loadUserData(apelido){
 // Realtime: resultados e ranking
 function subscribeRT(){
   if(!supa)return;
+  // Resultados em tempo real
   supa.channel('partidas-rt')
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'partidas'},p=>{
       const r=p.new;
@@ -477,9 +440,11 @@ function subscribeRT(){
       save();refreshAllPanels();
       toast('⚽ Placar atualizado ao vivo!');
     }).subscribe();
+  // Palpites de outros usuários → atualiza ranking/admin
   supa.channel('palpites-rt')
     .on('postgres_changes',{event:'*',schema:'public',table:'palpites'},p=>{
       const r=p.new||p.old;if(!r)return;
+      // Não atualiza palpites do usuário atual (evita conflito com edição)
       if(ST.user&&r.apelido===ST.user.name)return;
       if(p.eventType==='DELETE'){
         if(ST.preds[r.apelido])delete ST.preds[r.apelido][r.partida_id];
@@ -642,7 +607,7 @@ function setPred(id,h,a){
   if(!ST.user)return;
   if(!ST.preds[ST.user.name])ST.preds[ST.user.name]={};
   ST.preds[ST.user.name][id]={h,a};save();
-  savePredSupa(ST.user.name,id,h,a);
+  savePredSupa(ST.user.name,id,h,a); // ☁️ salva no banco
 }
 function delPred(id){
   if(!ST.user)return;
@@ -817,7 +782,7 @@ function updateInlineStandings(mid){
 function getMatchUTC(m){
   const[d,mo]=m.dt.split('/').map(Number);
   const[h,mn]=m.tm.split(':').map(Number);
-  return new Date(Date.UTC(2026,mo-1,d,h+3,mn));
+  return new Date(Date.UTC(2026,mo-1,d,h+3,mn)); // BRT+3=UTC
 }
 function matchStatus(m){
   const kick=getMatchUTC(m),lock=new Date(kick-5*60*1000),end=new Date(kick+115*60*1000),now=Date.now();
@@ -831,7 +796,7 @@ function fmtCountdown(ms){
 }
 
 // ══════════════════════════════════════════════════════
-//  🎯  RENDER — PALPITES
+//  🎯  RENDER — PALPITES (com bloqueio de tempo)
 // ══════════════════════════════════════════════════════
 function renderPalpites(){
   const el=document.getElementById('panel-palpites');
@@ -915,29 +880,37 @@ function renderPalpites(){
       },600);
     });
   });
+  // Auto-refresh a cada 60s para atualizar contadores e bloqueios
   clearTimeout(window._palpTimer);
   window._palpTimer=setTimeout(()=>{if(document.querySelector('#panel-palpites.on'))renderPalpites();},60000);
 }
 
 // ══════════════════════════════════════════════════════
-//  🏅  RENDER — RANKING ✅ CORRIGIDO
-//  Carrega TODOS os palpites do banco antes de calcular
+//  🏅  RENDER — RANKING (Supabase + fallback local)
 // ══════════════════════════════════════════════════════
 async function renderRanking(){
   const el=document.getElementById('panel-ranking');
-  el.innerHTML=`<div class="sec-h">🏅 RANKING</div>
-    <div style="padding:50px 20px;text-align:center;color:var(--muted)">
-      <div style="font-size:2rem;margin-bottom:10px">⏳</div>
-      <div style="font-size:.82rem">Carregando ranking global...</div>
-    </div>`;
+  el.innerHTML=`<div class="sec-h">🏅 RANKING</div><div style="padding:24px;text-align:center;color:var(--muted)">Calculando...</div>`;
 
-  // ✅ CORREÇÃO PRINCIPAL: carrega palpites de todos do banco antes de calcular
+  // ✅ Carrega palpites de TODOS do banco (ranking global)
   let isCloud=false;
   if(supa){
-    isCloud=await loadAllPredsFromSupa();
+    try{
+      const{data,error}=await supa.from('palpites').select('apelido,partida_id,palpite_casa,palpite_visitante');
+      if(!error&&data){
+        data.forEach(r=>{
+          // Preserva edições locais do usuário atual ainda não enviadas
+          if(ST.user&&r.apelido===ST.user.name)return;
+          if(!ST.preds[r.apelido])ST.preds[r.apelido]={};
+          ST.preds[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
+        });
+        save();
+        isCloud=true;
+      }
+    }catch(e){}
   }
 
-  // Monta lista de todos os participantes com palpites
+  // Calcula pontos para todos os participantes
   const allU=[...new Set([...Object.keys(ST.preds),...(ST.user?[ST.user.name]:[])])];
   const lb=allU.map(u=>{
     let total=0,ct=0,ct10=0,ct5=0;
@@ -946,17 +919,17 @@ async function renderRanking(){
       if(pr){
         ct++;
         const pp=calcPts(pr,getRes(m.id));
-        if(pp!==null){
-          total+=pp;
-          if(pp===10)ct10++;
-          if(pp===5)ct5++;
-        }
+        if(pp!==null){total+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}
       }
     });
-    return{u,total,ct,ct10,ct5};
+    // ✅ MÉDIA: pontos por palpite feito — critério principal de desempate
+    const avg=ct>0?total/ct:0;
+    return{u,total,ct,ct10,ct5,avg};
   })
   .filter(x=>x.ct>0)
-  .sort((a,b)=>b.total-a.total||b.ct10-a.ct10||b.ct5-a.ct5||b.ct-a.ct);
+  // ✅ Ordena por MÉDIA (justo para quem entrou depois e perdeu jogos)
+  // Desempate: total de pontos → mais exatos (🎯) → mais certos (✅)
+  .sort((a,b)=>b.avg-a.avg||b.total-a.total||b.ct10-a.ct10||b.ct5-a.ct5);
 
   const medals=['🥇','🥈','🥉'];
   const rows=lb.map((x,i)=>{
@@ -966,19 +939,17 @@ async function renderRanking(){
       <div class="rk-av">${x.u[0].toUpperCase()}</div>
       <div class="rk-name">${escH(x.u)}${me?'<span class="rk-me">você</span>':''}</div>
       <div style="text-align:right">
-        <div class="rk-pts">${x.total}</div>
-        <div class="rk-sub">${x.ct} palpite${x.ct!==1?'s':''}${x.ct10?' · 🎯'+x.ct10:''}${x.ct5?' · ✅'+x.ct5:''}</div>
+        <div class="rk-pts">${x.avg.toFixed(1)}<span style="font-size:.58rem;color:var(--muted);font-family:var(--fb);font-weight:400"> pts/palp</span></div>
+        <div class="rk-sub">${x.total}pts · ${x.ct} palp${x.ct10?' · 🎯'+x.ct10:''}${x.ct5?' · ✅'+x.ct5:''}</div>
       </div>
     </div>`;
   }).join('');
 
   el.innerHTML=`<div class="sec-h">🏅 RANKING</div>
-  <div class="rk-card">${rows||'<div style="padding:30px;text-align:center;color:var(--muted)">Nenhum palpite registrado ainda.</div>'}</div>
-  <p style="text-align:center;font-size:.63rem;color:var(--dim);margin-top:10px">
-    ${isCloud
-      ?'☁️ Ranking global · todos os participantes do banco'
-      :'💾 Ranking local · entre para ver o ranking global'}
-    &nbsp;·&nbsp; 🎯 Placar exato (+10) &nbsp;·&nbsp; ✅ Resultado (+5)
+  <div class="rk-card">${rows||'<div style="padding:24px;text-align:center;color:var(--muted)">Nenhum palpite ainda.</div>'}</div>
+  <p style="text-align:center;font-size:.63rem;color:var(--dim);margin-top:8px">
+    🏅 Ordenado por <strong style="color:var(--text)">média de pontos por palpite</strong> — justo para quem entrou depois<br>
+    ${isCloud?'☁️ Ranking global — todos os dispositivos':'💾 Local — entre para ver o ranking global'}
   </p>`;
 }
 
@@ -1049,7 +1020,7 @@ async function fetchEspn(silent=false){
 function startEspn(){
   fetchEspn(true);
   clearInterval(espnTimer);
-  espnTimer=setInterval(()=>fetchEspn(true),45000);
+  espnTimer=setInterval(()=>fetchEspn(true),45000); // 45 segundos
 }
 
 function updateEspnDot(){
@@ -1062,42 +1033,26 @@ function updateEspnDot(){
 // ══════════════════════════════════════════════════════
 //  👥  ADMIN — PARTICIPANTES
 // ══════════════════════════════════════════════════════
-
-// Usuários locais (só do dispositivo do admin)
-function getLocalUsers(){
+function getAllUsers(){
   const u=[];
   for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('c26_acc_'))u.push(k.replace('c26_acc_',''));}
   return u;
 }
-
-// ✅ CORREÇÃO: busca todos os apelidos distintos do banco (todos os dispositivos)
-async function getAllUsersFromSupa(){
-  if(!supa)return[];
-  try{
-    const{data,error}=await supa.from('palpites').select('apelido');
-    if(error)throw error;
-    return[...new Set((data||[]).map(r=>r.apelido))];
-  }catch(e){
-    console.warn('getAllUsersFromSupa:',e);
-    return[];
-  }
-}
-
-async function deleteUser(name){
+function deleteUser(name){
   if(!confirm(`Excluir "${name}" e todos os palpites? Não tem como desfazer!`))return;
   localStorage.removeItem('c26_acc_'+name);
   if(ST.preds[name]){delete ST.preds[name];save();}
-  if(supa)await supa.from('palpites').delete().eq('apelido',name);
+  if(supa)supa.from('palpites').delete().eq('apelido',name).then(()=>{});
   if(ST.user&&ST.user.name===name){ST.user=null;save();updateAuthUI();}
-  toast(`🗑️ "${name}" removido`);
   renderAdmin();renderRanking();
+  toast(`🗑️ "${name}" removido`);
 }
-async function resetPreds(name){
+function resetPreds(name){
   if(!confirm(`Zerar todos os palpites de "${name}"?`))return;
   if(ST.preds[name]){delete ST.preds[name];save();}
-  if(supa)await supa.from('palpites').delete().eq('apelido',name);
-  toast(`🔄 Palpites de "${name}" zerados`);
+  if(supa)supa.from('palpites').delete().eq('apelido',name).then(()=>{});
   renderAdmin();renderRanking();
+  toast(`🔄 Palpites de "${name}" zerados`);
 }
 function resetAllResults(){
   if(!confirm('⚠️ Zerar TODOS os resultados oficiais? Isso não pode ser desfeito!'))return;
@@ -1108,9 +1063,9 @@ function resetAllResults(){
 }
 
 // ══════════════════════════════════════════════════════
-//  🔐  RENDER — ADMIN ✅ CORRIGIDO (async, busca todos do banco)
+//  🔐  RENDER — ADMIN
 // ══════════════════════════════════════════════════════
-async function renderAdmin(){
+function renderAdmin(){
   const el=document.getElementById('panel-admin');
   if(!ST.admin){
     el.innerHTML=`<div class="sec-h">🔐 ADMINISTRADOR</div>
@@ -1125,35 +1080,15 @@ async function renderAdmin(){
     </div>`;
     document.getElementById('admDot').classList.remove('show');return;
   }
-
-  // Mostra loading enquanto busca
-  document.getElementById('admDot').classList.add('show');
-  el.innerHTML=`
-  <div class="sec-h">🔐 MODO ADMIN ATIVO</div>
-  <div style="padding:40px;text-align:center;color:var(--muted)">
-    <div style="font-size:2rem;margin-bottom:10px">⏳</div>
-    <div style="font-size:.82rem">Carregando todos os participantes do banco...</div>
-  </div>`;
-
-  // ✅ CORREÇÃO PRINCIPAL: carrega palpites e usuários de TODOS os dispositivos
-  await loadAllPredsFromSupa();
-  const supaUsers = await getAllUsersFromSupa();
-  const localUsers = getLocalUsers();
-  // Mescla: usuários do banco + locais, sem duplicatas
-  const allUsers=[...new Set([...supaUsers,...localUsers])];
-
-  const lb=allUsers.map(u=>{
+  const users=getAllUsers();
+  const lb=users.map(u=>{
     let pts=0,ct=0,ct10=0,ct5=0;
-    MATCHES.forEach(m=>{
-      const pr=(ST.preds[u]||{})[m.id];
-      if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}}
-    });
+    MATCHES.forEach(m=>{const pr=(ST.preds[u]||{})[m.id];if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}}});
     return{u,pts,ct,ct10,ct5};
-  }).sort((a,b)=>b.pts-a.pts||b.ct10-a.ct10||b.ct-a.ct);
-
+  }).sort((a,b)=>b.pts-a.pts||b.ct-a.ct);
   const medals=['🥇','🥈','🥉'];
   const partRows=lb.length===0
-    ?`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nenhum participante encontrado.</td></tr>`
+    ?`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nenhum participante cadastrado.</td></tr>`
     :lb.map((x,i)=>`<tr>
       <td><strong style="color:${i<3?['var(--gold)','#bbb','#c08040'][i]:'var(--text)'}">${i<3?medals[i]:i+1}</strong></td>
       <td><div style="display:flex;align-items:center;gap:8px">
@@ -1170,16 +1105,11 @@ async function renderAdmin(){
       </td>
     </tr>`).join('');
 
-  const origemInfo=supa
-    ?`☁️ <strong>${supaUsers.length}</strong> do banco · 💾 <strong>${localUsers.length}</strong> locais`
-    :`💾 Apenas locais (Supabase desconectado)`;
-
   el.innerHTML=`
   <div class="sec-h">🔐 MODO ADMIN ATIVO</div>
   <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
     <div class="adm-badge" style="background:rgba(0,196,71,.14);border-color:var(--brd-g);color:var(--gl)">✅ Admin Ativo</div>
     <button class="btn-sub ghost" style="width:auto;padding:8px 16px;font-size:.75rem;touch-action:manipulation" onclick="exitAdmin()">🔒 Sair do Admin</button>
-    <button class="act-btn rst" style="padding:8px 14px;font-size:.72rem" onclick="renderAdmin()">🔄 Atualizar lista</button>
   </div>
 
   <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:22px;font-size:.78rem;line-height:2">
@@ -1204,7 +1134,7 @@ async function renderAdmin(){
   </div>
 
   <div class="sec-h" style="font-size:1.4rem">👥 PARTICIPANTES
-    <span style="font-family:var(--fb);font-size:.73rem;color:var(--muted);letter-spacing:0;font-weight:400">${lb.length} encontrado${lb.length!==1?'s':''} · ${origemInfo}</span>
+    <span style="font-family:var(--fb);font-size:.73rem;color:var(--muted);letter-spacing:0;font-weight:400">${lb.length} cadastrado${lb.length!==1?'s':''}</span>
   </div>
   <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:auto;margin-bottom:10px">
     <table class="part-table">
@@ -1218,6 +1148,7 @@ async function renderAdmin(){
     🔄 Zerar — apaga palpites mas mantém a conta &nbsp;|&nbsp; 🗑️ Excluir — remove conta e palpites permanentemente
   </p>`;
 
+  document.getElementById('admDot').classList.add('show');
   updateEspnDot();
 }
 
@@ -1271,7 +1202,7 @@ function doLogin(){
   ST.user={name};save();closeModal('loginModal');
   document.getElementById('lName').value='';document.getElementById('lPass').value='';
   updateAuthUI();
-  loadUserData(name);
+  loadUserData(name); // ☁️ sincroniza palpites com Supabase
 }
 function doLogout(){
   if(!confirm('Sair do bolão?'))return;
@@ -1333,14 +1264,9 @@ document.getElementById('lName').addEventListener('input',e=>updateLoginUI(e.tar
 load();
 updateAuthUI();
 renderTabela();
-if(supa){
-  syncFromSupabase();           // carrega resultados
-  loadAllPredsFromSupa();       // ✅ carrega palpites de todos (ranking funciona sem login)
-}else{
-  setSyncStatus('','Sem Supabase');
-}
-startEspn();
-if(ST.user)loadUserData(ST.user.name);
+if(supa){syncFromSupabase();}else{setSyncStatus('','Sem Supabase');}
+startEspn(); // inicia busca automática ESPN
+if(ST.user)loadUserData(ST.user.name); // sincroniza palpites do usuário logado
 </script>
 </body>
 </html>
