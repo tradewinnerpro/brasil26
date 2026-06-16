@@ -44,7 +44,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
 .user-pill{display:flex;align-items:center;gap:8px;background:rgba(0,179,65,.1);
   border:1px solid rgba(0,179,65,.28);border-radius:50px;padding:7px 14px;font-size:.78rem;font-weight:600}
 .btn-out{background:none;border:none;color:var(--red);cursor:pointer;font-size:.7rem;font-weight:700;
-  padding:3px 9px;border-radius:14px;transition:background .2s;touch-action:manipulation}
+  padding:3px 9px;border-radius:14px;transition:background .2s;touch-action:manipulation;min-height:32px;min-width:44px}
 .btn-out:hover{background:rgba(240,60,60,.1)}
 .nav{background:rgba(5,14,8,.97);backdrop-filter:blur(20px);
   border-bottom:1px solid var(--border);position:sticky;top:0;z-index:90}
@@ -126,7 +126,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
 .t-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:105px}
 .sz{display:flex;align-items:center;gap:3px;justify-content:center}
 .ssep{font-weight:800;font-size:.82rem;color:var(--muted)}
-/* ✅ MOBILE FIX: touch-action + font-size >= 16px evita zoom no iOS */
 .sinp{width:38px;height:40px;background:rgba(0,0,0,.5);border:1.5px solid var(--border);
   border-radius:8px;color:var(--text);font-family:var(--fh);font-size:1.08rem;
   letter-spacing:1px;text-align:center;outline:none;transition:all .2s;
@@ -204,10 +203,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
 .act-btn.del:hover{background:rgba(255,80,80,.26);color:#fff}
 .act-btn.rst{background:rgba(255,200,0,.1);color:var(--gold);border:1px solid rgba(255,200,0,.25)}
 .act-btn.rst:hover{background:rgba(255,200,0,.2)}
+.act-btn.edt{background:rgba(0,179,65,.15);color:var(--gl);border:1px solid rgba(0,179,65,.3)}
+.act-btn.edt:hover{background:rgba(0,179,65,.28)}
 .auto-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
 .auto-dot.on{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink .9s ease-in-out infinite}
 .auto-dot.off{background:var(--dim)}
-/* ═══ PAINEL PALPITES DO PARTICIPANTE (ADMIN) ═══ */
 .part-detail{position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.94);
   overflow-y:auto;display:none;padding:14px}
 .part-detail.open{display:block}
@@ -253,9 +253,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
   padding:4px 8px;cursor:pointer;touch-action:manipulation}
 .ed-btn:hover{background:rgba(255,215,0,.22)}
 @media(max-width:640px){
+  .mr{grid-template-columns:50px 1fr 82px 1fr;padding:7px 10px;gap:5px}
+  .pred-row{grid-template-columns:50px 1fr 96px 1fr 36px;padding:7px 10px;gap:5px}
   .pd-row{grid-template-columns:38px 1fr 84px 1fr 44px 38px;padding:7px 10px;gap:4px;font-size:.68rem}
   .pd-pred,.pd-res{font-size:.82rem;padding:2px 5px;min-width:50px}
+  .t-name{max-width:70px}.m-home,.m-away{font-size:.7rem}
+  .sinp{width:36px;height:40px;font-size:1rem}
+  .sdsp{font-size:.88rem;min-width:62px}.nav-btn .lbl{display:none}
+  .m-v{display:none}
 }
+@media(max-width:400px){.t-name{max-width:52px;font-size:.66rem}}
 .login-hint{font-size:.72rem;font-weight:600;margin:-4px 0 8px;min-height:18px;transition:color .3s}
 .modal-ov{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.82);
   backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:14px}
@@ -270,7 +277,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
 .m-ico{font-size:2.6rem;margin-bottom:8px}
 .m-ttl{font-family:var(--fh);font-size:1.7rem;letter-spacing:.06em;margin-bottom:5px}
 .m-txt{color:var(--muted);font-size:.76rem;margin-bottom:16px}
-/* ✅ MOBILE FIX: font-size 1rem evita zoom no iOS */
 .inp{width:100%;padding:11px 13px;background:rgba(0,0,0,.5);
   border:1.5px solid var(--border);border-radius:9px;color:var(--text);
   font-family:var(--fb);font-size:1rem;outline:none;transition:border-color .2s;margin-bottom:9px}
@@ -302,15 +308,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
   box-shadow:0 6px 18px rgba(0,0,0,.5);animation:tIn .24s ease;max-width:250px}
 @keyframes tIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;border-top:1px solid var(--border);margin-top:10px;line-height:1.8}
-@media(max-width:640px){
-  .mr{grid-template-columns:50px 1fr 82px 1fr;padding:7px 10px;gap:5px}
-  .pred-row{grid-template-columns:50px 1fr 96px 1fr 36px;padding:7px 10px;gap:5px}
-  .t-name{max-width:70px}.m-home,.m-away{font-size:.7rem}
-  .sinp{width:36px;height:40px;font-size:1rem} /* ✅ 1rem = 16px = sem zoom iOS */
-  .sdsp{font-size:.88rem;min-width:62px}.nav-btn .lbl{display:none}
-  .m-v{display:none}
-}
-@media(max-width:400px){.t-name{max-width:52px;font-size:.66rem}}
 </style>
 </head>
 <body>
@@ -378,10 +375,15 @@ const CFG={
 };
 
 // ══════════════════════════════════════════════════════
-//  🌐  SUPABASE
+//  🌐  SUPABASE (com timeout)
 // ══════════════════════════════════════════════════════
 let supa=null;
 try{supa=window.supabase.createClient(CFG.SUPA_URL,CFG.SUPA_KEY);}catch(e){}
+
+async function supaCall(promise,timeoutMs=8000){
+  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout')),timeoutMs));
+  return Promise.race([promise,timeout]);
+}
 
 function setSyncStatus(s,t){
   document.getElementById('sdot').className='sdot '+s;
@@ -393,7 +395,7 @@ async function syncFromSupabase(){
   if(!supa){setSyncStatus('','Sem BD');return;}
   try{
     setSyncStatus('sv','Conectando...');
-    const{data,error}=await supa.from('partidas').select('id,placar_casa,placar_visitante').lte('id',72);
+    const{data,error}=await supaCall(supa.from('partidas').select('id,placar_casa,placar_visitante').lte('id',72));
     if(error)throw error;
     (data||[]).forEach(r=>{
       if(r.placar_casa!==null&&r.placar_visitante!==null)
@@ -414,7 +416,7 @@ async function saveToSupa(id,h,a){
   if(!supa)return;
   setSyncStatus('sv','Salvando...');
   try{
-    const{error}=await supa.from('partidas').update({placar_casa:h,placar_visitante:a}).eq('id',id);
+    const{error}=await supaCall(supa.from('partidas').update({placar_casa:h,placar_visitante:a}).eq('id',id));
     if(error)throw error;
     setSyncStatus('ok','Salvo ✓');
     setTimeout(()=>setSyncStatus('ok','Supabase ✓'),1500);
@@ -425,10 +427,10 @@ async function saveToSupa(id,h,a){
 async function savePredSupa(apelido,partidaId,h,a){
   if(!supa)return;
   try{
-    const{error}=await supa.from('palpites').upsert(
+    const{error}=await supaCall(supa.from('palpites').upsert(
       {apelido,partida_id:partidaId,palpite_casa:h,palpite_visitante:a},
       {onConflict:'apelido,partida_id'}
-    );
+    ));
     if(error)throw error;
   }catch(e){console.warn('Erro palpite:',e);}
 }
@@ -437,9 +439,9 @@ async function savePredSupa(apelido,partidaId,h,a){
 async function loadPredsFromSupa(apelido){
   if(!supa)return false;
   try{
-    const{data,error}=await supa.from('palpites')
+    const{data,error}=await supaCall(supa.from('palpites')
       .select('partida_id,palpite_casa,palpite_visitante')
-      .eq('apelido',apelido);
+      .eq('apelido',apelido));
     if(error)throw error;
     if(!ST.preds[apelido])ST.preds[apelido]={};
     (data||[]).forEach(r=>{
@@ -460,7 +462,7 @@ async function migrateLocalPreds(apelido){
     const rows=entries.map(([id,sc])=>({
       apelido,partida_id:parseInt(id),palpite_casa:sc.h,palpite_visitante:sc.a
     }));
-    const{error}=await supa.from('palpites').upsert(rows,{onConflict:'apelido,partida_id'});
+    const{error}=await supaCall(supa.from('palpites').upsert(rows,{onConflict:'apelido,partida_id'}));
     if(!error)toast(`☁️ ${rows.length} palpite${rows.length>1?'s':''} sincronizado${rows.length>1?'s':''}!`);
   }catch(e){}
 }
@@ -479,7 +481,6 @@ async function loadUserData(apelido){
 // Realtime: resultados e ranking
 function subscribeRT(){
   if(!supa)return;
-  // Resultados em tempo real
   supa.channel('partidas-rt')
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'partidas'},p=>{
       const r=p.new;
@@ -489,11 +490,9 @@ function subscribeRT(){
       save();refreshAllPanels();
       toast('⚽ Placar atualizado ao vivo!');
     }).subscribe();
-  // Palpites de outros usuários → atualiza ranking/admin
   supa.channel('palpites-rt')
     .on('postgres_changes',{event:'*',schema:'public',table:'palpites'},p=>{
       const r=p.new||p.old;if(!r)return;
-      // Não atualiza palpites do usuário atual (evita conflito com edição)
       if(ST.user&&r.apelido===ST.user.name)return;
       if(p.eventType==='DELETE'){
         if(ST.preds[r.apelido])delete ST.preds[r.apelido][r.partida_id];
@@ -656,7 +655,7 @@ function setPred(id,h,a){
   if(!ST.user)return;
   if(!ST.preds[ST.user.name])ST.preds[ST.user.name]={};
   ST.preds[ST.user.name][id]={h,a};save();
-  savePredSupa(ST.user.name,id,h,a); // ☁️ salva no banco
+  savePredSupa(ST.user.name,id,h,a);
 }
 function delPred(id){
   if(!ST.user)return;
@@ -831,7 +830,7 @@ function updateInlineStandings(mid){
 function getMatchUTC(m){
   const[d,mo]=m.dt.split('/').map(Number);
   const[h,mn]=m.tm.split(':').map(Number);
-  return new Date(Date.UTC(2026,mo-1,d,h+3,mn)); // BRT+3=UTC
+  return new Date(Date.UTC(2026,mo-1,d,h+3,mn));
 }
 function matchStatus(m){
   const kick=getMatchUTC(m),lock=new Date(kick-5*60*1000),end=new Date(kick+115*60*1000),now=Date.now();
@@ -929,7 +928,6 @@ function renderPalpites(){
       },600);
     });
   });
-  // Auto-refresh a cada 60s para atualizar contadores e bloqueios
   clearTimeout(window._palpTimer);
   window._palpTimer=setTimeout(()=>{if(document.querySelector('#panel-palpites.on'))renderPalpites();},60000);
 }
@@ -941,14 +939,12 @@ async function renderRanking(){
   const el=document.getElementById('panel-ranking');
   el.innerHTML=`<div class="sec-h">🏅 RANKING</div><div style="padding:24px;text-align:center;color:var(--muted)">Calculando...</div>`;
 
-  // ✅ Carrega palpites de TODOS do banco (ranking global)
   let isCloud=false;
   if(supa){
     try{
-      const{data,error}=await supa.from('palpites').select('apelido,partida_id,palpite_casa,palpite_visitante');
+      const{data,error}=await supaCall(supa.from('palpites').select('apelido,partida_id,palpite_casa,palpite_visitante'));
       if(!error&&data){
         data.forEach(r=>{
-          // Preserva edições locais do usuário atual ainda não enviadas
           if(ST.user&&r.apelido===ST.user.name)return;
           if(!ST.preds[r.apelido])ST.preds[r.apelido]={};
           ST.preds[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
@@ -959,7 +955,6 @@ async function renderRanking(){
     }catch(e){}
   }
 
-  // Calcula pontos para todos os participantes
   const allU=[...new Set([...Object.keys(ST.preds),...(ST.user?[ST.user.name]:[])])];
   const lb=allU.map(u=>{
     let total=0,ct=0,ct10=0,ct5=0;
@@ -971,13 +966,10 @@ async function renderRanking(){
         if(pp!==null){total+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}
       }
     });
-    // ✅ MÉDIA: pontos por palpite feito — critério principal de desempate
     const avg=ct>0?total/ct:0;
     return{u,total,ct,ct10,ct5,avg};
   })
   .filter(x=>x.ct>0)
-  // ✅ Ordena por MÉDIA (justo para quem entrou depois e perdeu jogos)
-  // Desempate: total de pontos → mais exatos (🎯) → mais certos (✅)
   .sort((a,b)=>b.avg-a.avg||b.total-a.total||b.ct10-a.ct10||b.ct5-a.ct5);
 
   const medals=['🥇','🥈','🥉'];
@@ -1069,7 +1061,7 @@ async function fetchEspn(silent=false){
 function startEspn(){
   fetchEspn(true);
   clearInterval(espnTimer);
-  espnTimer=setInterval(()=>fetchEspn(true),45000); // 45 segundos
+  espnTimer=setInterval(()=>fetchEspn(true),45000);
 }
 
 function updateEspnDot(){
@@ -1112,6 +1104,166 @@ function resetAllResults(){
 }
 
 // ══════════════════════════════════════════════════════
+//  ✏️  ADMIN — EDITAR PALPITES DO PARTICIPANTE
+// ══════════════════════════════════════════════════════
+function openPartDetail(uname){
+  if(!ST.admin)return;
+  
+  const preds=ST.preds[uname]||{};
+  const lb=(()=>{
+    let pts=0,ct=0,ct10=0,ct5=0;
+    MATCHES.forEach(m=>{
+      const pr=preds[m.id];
+      if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}}
+    });
+    return{pts,ct,ct10,ct5};
+  })();
+
+  let rows='';
+  Object.keys(GROUPS).forEach(g=>{
+    rows+=`<div style="padding:6px 14px;background:rgba(0,0,0,.3);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--dim)">Grupo ${g}</div>`;
+    MATCHES.filter(m=>m.g===g).forEach(m=>{
+      const pred=preds[m.id];
+      const res=getRes(m.id);
+      const pp=calcPts(pred,res);
+      const isBr=(m.h==='Brasil'||m.a==='Brasil');
+      const st=matchStatus(m);
+      const locked=(st.s!=='open');
+      
+      if(locked){
+        rows+=`<div class="pd-row${isBr?' br-row':''}">
+          <div style="font-size:.6rem;color:var(--dim)">${m.dt}</div>
+          <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;font-size:.72rem">${fi(m.h,18)} ${m.h}</div>
+          <div class="pd-pred">${pred?pred.h+' : '+pred.a:'? : ?'}</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:.72rem">${m.a} ${fi(m.a,18)}</div>
+          <div class="pd-res">${res?res.h+':'+res.a:'—'}</div>
+          <div class="pd-pts ${pClass(pp)}">${pLabel(pp)}</div>
+        </div>`;
+      }else{
+        rows+=`<div class="pd-row${isBr?' br-row':''}">
+          <div style="font-size:.6rem;color:var(--dim)">${m.dt}</div>
+          <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;font-size:.72rem">${fi(m.h,18)} ${m.h}</div>
+          <div style="display:flex;align-items:center;gap:3px;justify-content:center">
+            <input type="number" class="sinp-sm" data-apred="${m.id}" data-side="h" data-user="${escH(uname)}" value="${pred?pred.h:''}" min="0" max="30" placeholder="?" inputmode="numeric" pattern="[0-9]*">
+            <span style="color:var(--muted)">:</span>
+            <input type="number" class="sinp-sm" data-apred="${m.id}" data-side="a" data-user="${escH(uname)}" value="${pred?pred.a:''}" min="0" max="30" placeholder="?" inputmode="numeric" pattern="[0-9]*">
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:.72rem">${m.a} ${fi(m.a,18)}</div>
+          <div class="pd-res">${res?res.h+':'+res.a:'—'}</div>
+          <div class="pd-pts ${pClass(pp)}">${pLabel(pp)}</div>
+        </div>`;
+      }
+    });
+  });
+
+  const html=`
+  <div class="part-detail open" id="partDetailOverlay" onclick="if(event.target===this)closePartDetail()">
+    <div class="pd-box">
+      <div class="pd-head">
+        <div>
+          <div class="pd-name">
+            <span class="part-av" style="width:36px;height:36px;font-size:.9rem">${escH(uname[0].toUpperCase())}</span>
+            ${escH(uname)}
+          </div>
+          <div class="pd-stats" style="margin-top:6px">
+            <div class="pd-stat"><strong>${lb.pts}</strong> pts</div>
+            <div class="pd-stat"><strong>${lb.ct}</strong> palp</div>
+            <div class="pd-stat"><strong style="color:var(--gold)">${lb.ct10}</strong> 🎯</div>
+            <div class="pd-stat"><strong style="color:var(--green)">${lb.ct5}</strong> ✅</div>
+          </div>
+        </div>
+        <button class="pd-close" onclick="closePartDetail()">✕ Fechar</button>
+      </div>
+      <div style="max-height:65vh;overflow-y:auto">
+        <div class="pd-row hdr">
+          <div>Data</div><div style="text-align:right">Casa</div><div style="text-align:center">Palpite</div><div>Visitante</div><div style="text-align:center">Oficial</div><div style="text-align:center">Pts</div>
+        </div>
+        ${rows}
+      </div>
+    </div>
+  </div>`;
+
+  const existing=document.getElementById('partDetailOverlay');
+  if(existing)existing.remove();
+  
+  document.body.insertAdjacentHTML('beforeend',html);
+
+  let saveDeb={};
+  document.querySelectorAll('.sinp-sm[data-apred]').forEach(inp=>{
+    inp.addEventListener('input',e=>{
+      const mid=parseInt(e.target.dataset.apred);
+      const user=e.target.dataset.user;
+      clearTimeout(saveDeb[mid]);
+      saveDeb[mid]=setTimeout(()=>{
+        const row=e.target.closest('.pd-row');
+        const hI=row.querySelector('[data-side="h"]');
+        const aI=row.querySelector('[data-side="a"]');
+        const hv=hI.value.trim();
+        const av=aI.value.trim();
+        
+        if(!ST.preds[user])ST.preds[user]={};
+        
+        if(hv===''&&av===''){
+          delete ST.preds[user][mid];
+        }else if(hv!==''&&av!==''){
+          const h=Math.max(0,parseInt(hv)||0);
+          const a=Math.max(0,parseInt(av)||0);
+          hI.value=h;
+          aI.value=a;
+          ST.preds[user][mid]={h,a};
+          if(supa){
+            supa.from('palpites').upsert(
+              {apelido:user,partida_id:mid,palpite_casa:h,palpite_visitante:a},
+              {onConflict:'apelido,partida_id'}
+            ).then(()=>{});
+          }
+        }
+        
+        save();
+        
+        const pp2=calcPts(ST.preds[user][mid]||null,getRes(mid));
+        const ptsCell=row.querySelector('.pd-pts');
+        if(ptsCell){
+          ptsCell.className='pd-pts '+pClass(pp2);
+          ptsCell.textContent=pLabel(pp2);
+        }
+        
+        updatePartDetailStats(user);
+        toast('💾 Palpite salvo');
+      },600);
+    });
+  });
+}
+
+function closePartDetail(){
+  const overlay=document.getElementById('partDetailOverlay');
+  if(overlay)overlay.remove();
+  renderRanking();
+  renderAdmin();
+}
+
+function updatePartDetailStats(uname){
+  const preds=ST.preds[uname]||{};
+  let pts=0,ct=0,ct10=0,ct5=0;
+  MATCHES.forEach(m=>{
+    const pr=preds[m.id];
+    if(pr){
+      ct++;
+      const pp=calcPts(pr,getRes(m.id));
+      if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}
+    }
+  });
+  
+  const stats=document.querySelectorAll('.pd-stat strong');
+  if(stats.length>=4){
+    stats[0].textContent=pts;
+    stats[1].textContent=ct;
+    stats[2].textContent=ct10;
+    stats[3].textContent=ct5;
+  }
+}
+
+// ══════════════════════════════════════════════════════
 //  🔐  RENDER — ADMIN
 // ══════════════════════════════════════════════════════
 function renderAdmin(){
@@ -1149,6 +1301,7 @@ function renderAdmin(){
       <td style="color:var(--gold)">${x.ct10}</td>
       <td style="color:var(--green)">${x.ct5}</td>
       <td style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="act-btn edt" onclick="openPartDetail('${escH(x.u)}')">✏️ Editar</button>
         <button class="act-btn rst" onclick="resetPreds('${escH(x.u)}')">🔄 Zerar</button>
         <button class="act-btn del" onclick="deleteUser('${escH(x.u)}')">🗑️ Excluir</button>
       </td>
@@ -1194,7 +1347,7 @@ function renderAdmin(){
     </table>
   </div>
   <p style="font-size:.64rem;color:var(--dim);margin-bottom:22px">
-    🔄 Zerar — apaga palpites mas mantém a conta &nbsp;|&nbsp; 🗑️ Excluir — remove conta e palpites permanentemente
+    ✏️ Editar — abre os palpites do participante &nbsp;|&nbsp; 🔄 Zerar — apaga palpites mas mantém a conta &nbsp;|&nbsp; 🗑️ Excluir — remove conta e palpites permanentemente
   </p>`;
 
   document.getElementById('admDot').classList.add('show');
@@ -1251,7 +1404,7 @@ function doLogin(){
   ST.user={name};save();closeModal('loginModal');
   document.getElementById('lName').value='';document.getElementById('lPass').value='';
   updateAuthUI();
-  loadUserData(name); // ☁️ sincroniza palpites com Supabase
+  loadUserData(name);
 }
 function doLogout(){
   if(!confirm('Sair do bolão?'))return;
@@ -1314,8 +1467,8 @@ load();
 updateAuthUI();
 renderTabela();
 if(supa){syncFromSupabase();}else{setSyncStatus('','Sem Supabase');}
-startEspn(); // inicia busca automática ESPN
-if(ST.user)loadUserData(ST.user.name); // sincroniza palpites do usuário logado
+startEspn();
+if(ST.user)loadUserData(ST.user.name);
 </script>
 </body>
 </html>
