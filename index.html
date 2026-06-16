@@ -507,7 +507,6 @@ function updateEspnDot(){const dot=document.getElementById('liveDot'),txt=docume
 
 // ══════════════════════════════════════════════════════
 //  ✏️  EDITAR PALPITES — PAINEL DO PARTICIPANTE
-//  ✅ FIX: async, recarrega preds do banco antes de abrir
 // ══════════════════════════════════════════════════════
 let _editUser='';
 let _changed={};
@@ -521,7 +520,7 @@ async function openPartDetail(uname){
   const ov=document.getElementById('partDetailOverlay');
   ov.innerHTML=`<div class="pd-overlay open"><div class="pd-box"><div class="pd-head"><div class="pd-name"><span class="part-av" style="width:36px;height:36px;font-size:.9rem">${escH(uname[0].toUpperCase())}</span>${escH(uname)}</div><span style="color:var(--muted);font-size:.8rem">Carregando palpites do banco...</span></div></div></div>`;
 
-  // ✅ CORREÇÃO PRINCIPAL: recarrega palpites do banco para este usuário
+  // Recarrega palpites do banco para este usuário
   if(supa){
     await loadPredsForUser(uname);
   }
@@ -554,19 +553,23 @@ async function openPartDetail(uname){
         let predCell,resCell;
         resCell=res?`<div class="pd-res-display">${res.h}:${res.a}</div>`:`<div style="color:var(--dim);font-size:.72rem;text-align:center">—</div>`;
 
+        // Admin pode editar QUALQUER palpite, mesmo de jogos fechados
+        const hv=pred!==null&&pred!==undefined?pred.h:'';
+        const av=pred!==null&&pred!==undefined?pred.a:'';
+        let extraClass='';
+        let lockBadge='';
         if(locked){
-          // Jogo bloqueado: mostra palpite somente leitura
-          predCell=`<div class="pd-pred-display">${pred?pred.h+' : '+pred.a:'? : ?'}</div>`;
-        }else{
-          // Jogo aberto: inputs editáveis
-          const hv=pred!==null&&pred!==undefined?pred.h:'';
-          const av=pred!==null&&pred!==undefined?pred.a:'';
-          predCell=`<div style="display:flex;align-items:center;gap:3px;justify-content:center">
-            <input type="number" class="sinp-sm" data-pdmid="${m.id}" data-side="h" value="${hv}" min="0" max="30" placeholder="?" inputmode="numeric" pattern="[0-9]*">
-            <span style="color:var(--muted);font-weight:700;font-size:.9rem">:</span>
-            <input type="number" class="sinp-sm" data-pdmid="${m.id}" data-side="a" value="${av}" min="0" max="30" placeholder="?" inputmode="numeric" pattern="[0-9]*">
-          </div>`;
+          extraClass=' style="border-color:var(--gold);background:rgba(255,215,0,.08)"';
+          lockBadge=`<span style="font-size:.5rem;color:var(--gold);display:block;text-align:center;margin-top:1px">🔒 ${st.s==='live'?'AO VIVO':'ENCERRADO'}</span>`;
         }
+        predCell=`<div style="display:flex;flex-direction:column;align-items:center;gap:1px;justify-content:center">
+          <div style="display:flex;align-items:center;gap:3px">
+            <input type="number" class="sinp-sm" data-pdmid="${m.id}" data-side="h" value="${hv}" min="0" max="30" placeholder="?" inputmode="numeric" pattern="[0-9]*"${extraClass}>
+            <span style="color:var(--muted);font-weight:700;font-size:.9rem">:</span>
+            <input type="number" class="sinp-sm" data-pdmid="${m.id}" data-side="a" value="${av}" min="0" max="30" placeholder="?" inputmode="numeric" pattern="[0-9]*"${extraClass}>
+          </div>
+          ${lockBadge}
+        </div>`;
 
         html+=`<div class="pd-row${isBr?' br-row':''}" id="pdrow-${m.id}">
           <div style="text-align:center"><div class="m-d">${m.dt}</div><div class="m-t" style="font-size:.72rem">${m.tm}</div></div>
@@ -617,7 +620,7 @@ async function openPartDetail(uname){
           ${buildRows()}
         </div>
         <div style="padding:10px 14px;font-size:.64rem;color:var(--dim);border-top:1px solid var(--border)">
-          ⚡ Jogos bloqueados (🔴 em jogo / ✅ encerrados) não podem ser editados · Alterações ficam em destaque até salvar
+          🔒 Jogos bloqueados têm borda dourada — admin pode editá-los mesmo assim · Alterações ficam em destaque até salvar
         </div>
       </div>
     </div>`;
@@ -721,7 +724,6 @@ function closePartDetail(){
 //  👥  ADMIN helpers
 // ══════════════════════════════════════════════════════
 function getAllUsers(){
-  // ✅ CORREÇÃO: combina usuários locais + usuários do ST.preds (que vêm do banco)
   const users=new Set();
   for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('c26_acc_'))users.add(k.replace('c26_acc_',''));}
   Object.keys(ST.preds).forEach(u=>{if(u)users.add(u);});
@@ -734,7 +736,6 @@ function resetAllResults(){if(!confirm('⚠️ Zerar TODOS os resultados oficiai
 
 // ══════════════════════════════════════════════════════
 //  🔐  ADMIN
-//  ✅ FIX: async — carrega TODOS os palpites do banco antes de montar a lista
 // ══════════════════════════════════════════════════════
 async function renderAdmin(){
   const el=document.getElementById('panel-admin');
@@ -743,17 +744,14 @@ async function renderAdmin(){
     document.getElementById('admDot').classList.remove('show');return;
   }
 
-  // Mostra loading enquanto busca do banco
   el.innerHTML=`<div class="sec-h">🔐 MODO ADMIN ATIVO</div><div style="padding:40px;text-align:center;color:var(--muted)"><div style="font-size:2rem;margin-bottom:10px">⏳</div><div>Buscando todos os participantes do banco...</div></div>`;
   document.getElementById('admDot').classList.add('show');
 
-  // ✅ CORREÇÃO PRINCIPAL: força reload de TODOS os palpites do banco
-  // Isso garante que usuários de outros dispositivos apareçam
   if(supa){
     await loadAllPredsFromSupa();
   }
 
-  const users=getAllUsers(); // agora inclui usuários do banco
+  const users=getAllUsers();
 
   const lb=users.map(u=>{
     const up=ST.preds[u]||{};let pts=0,ct=0,ct10=0,ct5=0;
