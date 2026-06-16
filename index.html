@@ -19,54 +19,6 @@ html{scroll-behavior:smooth}
   --fh:'Bebas Neue',Impact,sans-serif;--fb:'Inter',system-ui,sans-serif;--r:13px;
 }
 body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875rem;min-height:100vh;overflow-x:hidden}
-
-/* ═══ SPLASH SCREEN ═══ */
-.splash{
-  position:fixed;inset:0;z-index:10000;
-  background:#ffffff;
-  display:flex;align-items:center;justify-content:center;
-  transition:opacity .8s ease,visibility .8s ease;
-  opacity:1;visibility:visible;
-}
-.splash.hide{opacity:0;visibility:hidden;pointer-events:none}
-.splash-inner{text-align:center;animation:splashPulse 3s ease-in-out infinite}
-@keyframes splashPulse{
-  0%,100%{transform:scale(1);filter:drop-shadow(0 0 20px rgba(0,160,50,.3))}
-  50%{transform:scale(1.03);filter:drop-shadow(0 0 35px rgba(0,160,50,.5))}
-}
-.splash-logo{
-  width:min(350px,75vw);height:auto;
-  filter:drop-shadow(0 0 15px rgba(0,0,0,.08));
-  border-radius:16px;
-}
-.splash-title{
-  font-family:var(--fh);font-size:clamp(1.4rem,5vw,2.4rem);
-  letter-spacing:.1em;
-  background:linear-gradient(180deg,#1a5c2a 0%,#00a838 50%,#006620 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  margin-top:14px;
-}
-.splash-sub{
-  color:#666;font-size:.72rem;letter-spacing:.14em;margin-top:6px;
-  animation:fadeInUp .6s .3s both;
-}
-@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.splash-loader{margin-top:22px;display:flex;gap:8px;justify-content:center}
-.splash-loader span{width:10px;height:10px;background:#00a838;border-radius:50%;animation:splashDot 1s ease-in-out infinite}
-.splash-loader span:nth-child(2){animation-delay:.2s;background:#c89600}
-.splash-loader span:nth-child(3){animation-delay:.4s;background:#00a838}
-@keyframes splashDot{0%,100%{opacity:.3;transform:scale(.7)}50%{opacity:1;transform:scale(1.3)}}
-
-/* ═══ WATERMARK ═══ */
-.watermark{
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  opacity:.20;
-}
-.watermark img{
-  width:100%;height:100%;object-fit:cover;
-  filter:grayscale(15%) brightness(1.2);
-}
-
 .fbg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 50% at 50% 30%,rgba(0,140,40,.1) 0%,transparent 60%),linear-gradient(180deg,#030b05 0%,#05100a 35%,#081408 70%,#05100a 100%);pointer-events:none}
 .app{position:relative;z-index:1}
 .wrap{max-width:1320px;margin:0 auto;padding:0 14px}
@@ -272,22 +224,6 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
 </style>
 </head>
 <body>
-
-<!-- ═══ SPLASH SCREEN ═══ -->
-<div class="splash" id="splashScreen">
-  <div class="splash-inner">
-    <img class="splash-logo" src="logocopa2.png" alt="Copa do Mundo 2026" onerror="this.style.display='none'">
-    <div class="splash-title">BOLÃO OFICIAL</div>
-    <div class="splash-sub">🇺🇸 ESTADOS UNIDOS · 🇨🇦 CANADÁ · 🇲🇽 MÉXICO</div>
-    <div class="splash-loader"><span></span><span></span><span></span></div>
-  </div>
-</div>
-
-<!-- ═══ WATERMARK ═══ -->
-<div class="watermark">
-  <img src="logocopa1.jpeg" alt="" onerror="this.style.display='none'">
-</div>
-
 <div class="fbg"></div>
 <div class="app">
 <header class="hdr"><div class="wrap"><div class="hdr-in">
@@ -340,23 +276,6 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
 <footer>⚽ Copa do Mundo FIFA 2026 · 48 Seleções · 104 Jogos · 16 Cidades-Sede<br>Todos os horários em BRT (Horário de Brasília) · Sistema de Bolão 🇧🇷</footer>
 
 <script>
-// ═══ SPLASH SCREEN ═══
-(function(){
-  const splash=document.getElementById('splashScreen');
-  window.addEventListener('load',function(){
-    setTimeout(function(){
-      splash.classList.add('hide');
-      setTimeout(function(){splash.remove();},900);
-    },5000);
-  });
-  setTimeout(function(){
-    if(splash&&!splash.classList.contains('hide')){
-      splash.classList.add('hide');
-      setTimeout(function(){splash.remove();},900);
-    }
-  },8000);
-})();
-
 // ══════════════════════════════════════════════════════
 //  ⚙️  CONFIG
 // ══════════════════════════════════════════════════════
@@ -414,17 +333,20 @@ async function syncFromSupabase(){
   }catch(e){setSyncStatus('er','Erro BD');}
 }
 
+// Carrega palpites de TODOS os usuários do banco
 async function loadAllPredsFromSupa(){
   if(!supa)return false;
   try{
     const{data,error}=await supa.from('palpites').select('apelido,partida_id,palpite_casa,palpite_visitante');
     if(error)throw error;
     if(data&&data.length>0){
+      // Agrupa por usuário
       const cloud={};
       data.forEach(r=>{if(!cloud[r.apelido])cloud[r.apelido]={};cloud[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};});
       const currentUser=ST.user?.name;
       Object.keys(cloud).forEach(u=>{
         if(u===currentUser){
+          // Para o usuário atual: só adiciona o que não existe localmente (não sobrescreve edições)
           if(!ST.preds[u])ST.preds[u]={};
           Object.keys(cloud[u]).forEach(mid=>{if(!ST.preds[u][mid])ST.preds[u][mid]=cloud[u][mid];});
         }else{
@@ -437,6 +359,7 @@ async function loadAllPredsFromSupa(){
   }catch(e){console.warn('loadAllPreds:',e);return false;}
 }
 
+// Carrega palpites de um usuário específico (força reload do banco)
 async function loadPredsForUser(apelido){
   if(!supa)return false;
   try{
@@ -448,6 +371,7 @@ async function loadPredsForUser(apelido){
   }catch(e){return false;}
 }
 
+// Migra palpites locais do usuário para o banco
 async function migrateLocalPreds(apelido){
   if(!supa)return;
   const local=ST.preds[apelido]||{};
@@ -592,15 +516,18 @@ async function openPartDetail(uname){
   _editUser=uname;
   _changed={};
 
+  // Mostra loading
   const ov=document.getElementById('partDetailOverlay');
   ov.innerHTML=`<div class="pd-overlay open"><div class="pd-box"><div class="pd-head"><div class="pd-name"><span class="part-av" style="width:36px;height:36px;font-size:.9rem">${escH(uname[0].toUpperCase())}</span>${escH(uname)}</div><span style="color:var(--muted);font-size:.8rem">Carregando palpites do banco...</span></div></div></div>`;
 
+  // Recarrega palpites do banco para este usuário
   if(supa){
     await loadPredsForUser(uname);
   }
 
   const preds=ST.preds[uname]||{};
 
+  // Calcula stats
   function calcStats(){
     let pts=0,ct=0,ct10=0,ct5=0;
     MATCHES.forEach(m=>{
@@ -610,6 +537,7 @@ async function openPartDetail(uname){
     return{pts,ct,ct10,ct5};
   }
 
+  // Constrói tabela de palpites
   function buildRows(){
     let html='';
     Object.keys(GROUPS).forEach(g=>{
@@ -625,6 +553,7 @@ async function openPartDetail(uname){
         let predCell,resCell;
         resCell=res?`<div class="pd-res-display">${res.h}:${res.a}</div>`:`<div style="color:var(--dim);font-size:.72rem;text-align:center">—</div>`;
 
+        // Admin pode editar QUALQUER palpite, mesmo de jogos fechados
         const hv=pred!==null&&pred!==undefined?pred.h:'';
         const av=pred!==null&&pred!==undefined?pred.a:'';
         let extraClass='';
@@ -696,8 +625,10 @@ async function openPartDetail(uname){
       </div>
     </div>`;
 
+    // Listener de clique fora para fechar
     document.getElementById('pdOvInner').addEventListener('click',function(e){if(e.target===this)closePartDetail();});
 
+    // Listeners dos inputs editáveis
     document.querySelectorAll('.sinp-sm[data-pdmid]').forEach(inp=>{
       inp.addEventListener('input',function(){
         const mid=parseInt(this.dataset.pdmid);
@@ -712,16 +643,18 @@ async function openPartDetail(uname){
           _changed[mid]={h,a};
           hI.classList.add('changed');aI.classList.add('changed');
         }else{
-          _changed[mid]=null;
+          _changed[mid]=null; // marcado para deletar
           hI.classList.remove('changed');aI.classList.remove('changed');
         }
 
+        // Atualiza pontuação na linha
         const cur=_changed.hasOwnProperty(mid)?_changed[mid]:(preds[mid]||null);
         const res=getRes(mid);
         const pp=calcPts(cur,res);
         const ptsEl=document.getElementById('pdpts-'+mid);
         if(ptsEl){ptsEl.className='pd-pts '+pClass(pp);ptsEl.textContent=pLabel(pp);}
 
+        // Atualiza estatísticas do cabeçalho
         const ns=calcStats();
         const e1=document.getElementById('pd-pts'),e2=document.getElementById('pd-ct'),e3=document.getElementById('pd-ct10'),e4=document.getElementById('pd-ct5'),e5=document.getElementById('pd-changed-info');
         if(e1)e1.textContent=ns.pts;if(e2)e2.textContent=ns.ct;if(e3)e3.textContent=ns.ct10;if(e4)e4.textContent=ns.ct5;
@@ -756,6 +689,7 @@ async function savePartPreds(uname){
 
   save();
 
+  // Salva no Supabase
   if(supa){
     try{
       if(toUpsert.length>0){
@@ -770,6 +704,7 @@ async function savePartPreds(uname){
   _changed={};
   toast(`✅ ${nch} palpite${nch>1?'s':''} de ${uname} salvos!`);
 
+  // Remove indicadores de alteração
   document.querySelectorAll('.sinp-sm.changed').forEach(i=>i.classList.remove('changed'));
   const e5=document.getElementById('pd-changed-info');if(e5)e5.textContent='';
 
