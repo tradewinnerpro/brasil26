@@ -517,7 +517,7 @@ const MATCHES=[
 ];
 
 // ══════════════════════════════════════════════════════
-//  💾  ESTADO - CORRIGIDO
+//  💾  ESTADO
 // ══════════════════════════════════════════════════════
 let ST={user:null,admin:false,results:{},preds:{}};
 
@@ -526,11 +526,14 @@ function load(){
     const r=localStorage.getItem('c26r');if(r)ST.results=JSON.parse(r);
     const p=localStorage.getItem('c26p');if(p)ST.preds=JSON.parse(p);
     const u=localStorage.getItem('c26u');if(u)ST.user=JSON.parse(u);
-    console.log('📦 Loaded:',{
+    console.log('📦 Loaded localStorage:',{
       results:Object.keys(ST.results).length,
-      preds:Object.keys(ST.preds).length,
-      users:Object.keys(ST.preds),
+      predsUsers:Object.keys(ST.preds).length,
       user:ST.user?.name
+    });
+    // Log detalhado dos palpites
+    Object.keys(ST.preds).forEach(u=>{
+      console.log(`  👤 ${u}: ${Object.keys(ST.preds[u]).length} palpites`);
     });
   }catch(e){console.error('Load error:',e);}
 }
@@ -541,7 +544,7 @@ function save(){
     localStorage.setItem('c26p',JSON.stringify(ST.preds));
     if(ST.user)localStorage.setItem('c26u',JSON.stringify(ST.user));
     else localStorage.removeItem('c26u');
-    console.log('💾 Saved');
+    console.log('💾 Saved to localStorage');
   }catch(e){console.error('Save error:',e);}
 }
 
@@ -552,7 +555,6 @@ function setRes(id,h,a){
   ST.results[id]={h,a};save();
   if(supa)saveToSupa(id,h,a);
 }
-
 function delRes(id){delete ST.results[id];save();}
 
 function setPred(id,h,a){
@@ -561,7 +563,6 @@ function setPred(id,h,a){
   ST.preds[ST.user.name][id]={h,a};save();
   if(supa)savePredSupa(ST.user.name,id,h,a);
 }
-
 function delPred(id){
   if(!ST.user)return;
   if(ST.preds[ST.user.name])delete ST.preds[ST.user.name][id];
@@ -570,10 +571,9 @@ function delPred(id){
 }
 
 // ══════════════════════════════════════════════════════
-//  ☁️  SUPABASE OPERATIONS - CORRIGIDO
+//  ☁️  SUPABASE OPERATIONS
 // ══════════════════════════════════════════════════════
 
-// Carrega resultados do banco
 async function syncFromSupabase(){
   if(!supa){setSyncStatus('er','Sem BD');return;}
   try{
@@ -597,7 +597,6 @@ async function syncFromSupabase(){
   }
 }
 
-// Salva resultado oficial
 async function saveToSupa(id,h,a){
   if(!supa)return;
   try{
@@ -612,7 +611,6 @@ async function saveToSupa(id,h,a){
   }
 }
 
-// Salva palpite no banco
 async function savePredSupa(apelido,partidaId,h,a){
   if(!supa)return;
   try{
@@ -621,47 +619,69 @@ async function savePredSupa(apelido,partidaId,h,a){
       {onConflict:'apelido,partida_id'}
     ));
     if(error)throw error;
+    console.log(`☁️ Saved pred: ${apelido} #${partidaId} = ${h}:${a}`);
   }catch(e){console.warn('Save pred error:',e);}
 }
 
-// Carrega TODOS os palpites do banco - CORRIGIDO
+// ══════════════════════════════════════════════════════
+//  CARREGA TODOS OS PALPITES DO BANCO (CORRIGIDO)
+// ══════════════════════════════════════════════════════
 async function loadAllPredsFromSupa(){
   if(!supa)return false;
   try{
-    console.log('☁️ Loading all preds from Supabase...');
+    console.log('☁️ Loading ALL preds from Supabase...');
     const{data,error}=await supaCall(
       supa.from('palpites').select('apelido,partida_id,palpite_casa,palpite_visitante')
     );
     if(error)throw error;
     
-    if(data){
-      // Não sobrescreve palpites do usuário atual
-      const currentUser=ST.user?.name;
-      const newPreds={};
+    if(data&&data.length>0){
+      console.log(`☁️ Received ${data.length} preds from Supabase`);
       
+      // Agrupa por usuário
+      const cloudPreds={};
       data.forEach(r=>{
-        if(!newPreds[r.apelido])newPreds[r.apelido]={};
-        newPreds[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
+        if(!cloudPreds[r.apelido])cloudPreds[r.apelido]={};
+        cloudPreds[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
       });
       
-      // Mescla com dados locais (preserva usuário atual)
-      Object.keys(newPreds).forEach(u=>{
-        if(u!==currentUser){
-          ST.preds[u]=newPreds[u];
-        }else{
-          // Para usuário atual, mescla sem sobrescrever
+      // Log do que veio do banco
+      Object.keys(cloudPreds).forEach(u=>{
+        console.log(`  ☁️ ${u}: ${Object.keys(cloudPreds[u]).length} palpites do banco`);
+      });
+      
+      // MESCLA com dados locais (banco tem prioridade, exceto para usuário atual)
+      const currentUser=ST.user?.name;
+      
+      Object.keys(cloudPreds).forEach(u=>{
+        if(u===currentUser){
+          // Para o usuário atual: mescla preservando palpites locais não enviados
           if(!ST.preds[u])ST.preds[u]={};
-          Object.keys(newPreds[u]||{}).forEach(mid=>{
+          Object.keys(cloudPreds[u]).forEach(mid=>{
+            // Só sobrescreve se não tem palpite local
             if(!ST.preds[u][mid]){
-              ST.preds[u][mid]=newPreds[u][mid];
+              ST.preds[u][mid]=cloudPreds[u][mid];
+              console.log(`  🔄 Mesclado para ${u}: partida ${mid} do banco`);
             }
           });
+        }else{
+          // Para outros usuários: banco é a verdade
+          ST.preds[u]=cloudPreds[u];
+          console.log(`  ✅ Carregado ${u}: ${Object.keys(cloudPreds[u]).length} palpites`);
         }
       });
       
       save();
-      console.log('☁️ Loaded preds for users:',Object.keys(ST.preds));
+      
+      // Log final
+      console.log('📊 Após mesclagem:');
+      Object.keys(ST.preds).forEach(u=>{
+        console.log(`  👤 ${u}: ${Object.keys(ST.preds[u]).length} palpites`);
+      });
+      
       return true;
+    }else{
+      console.log('☁️ Nenhum palpite no banco');
     }
     return false;
   }catch(e){
@@ -674,19 +694,20 @@ async function loadAllPredsFromSupa(){
 async function loadPredsForUser(apelido){
   if(!supa)return false;
   try{
+    console.log(`☁️ Loading preds for user: ${apelido}`);
     const{data,error}=await supaCall(
       supa.from('palpites')
         .select('partida_id,palpite_casa,palpite_visitante')
         .eq('apelido',apelido)
     );
     if(error)throw error;
-    if(data){
+    if(data&&data.length>0){
       if(!ST.preds[apelido])ST.preds[apelido]={};
       data.forEach(r=>{
         ST.preds[apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
       });
       save();
-      console.log(`☁️ Loaded preds for ${apelido}:`,data.length);
+      console.log(`☁️ Loaded ${data.length} preds for ${apelido}`);
       return true;
     }
     return false;
@@ -701,15 +722,19 @@ async function migrateLocalPreds(apelido){
   if(!supa)return;
   const local=ST.preds[apelido]||{};
   const entries=Object.entries(local).filter(([,sc])=>sc&&sc.h!==null&&sc.h!==undefined);
-  if(!entries.length)return;
+  if(!entries.length){
+    console.log(`📤 Nada para migrar de ${apelido}`);
+    return;
+  }
   try{
     const rows=entries.map(([id,sc])=>({
       apelido,partida_id:parseInt(id),palpite_casa:sc.h,palpite_visitante:sc.a
     }));
+    console.log(`📤 Migrando ${rows.length} palpites de ${apelido}...`);
     const{error}=await supaCall(supa.from('palpites').upsert(rows,{onConflict:'apelido,partida_id'}));
     if(!error){
       toast(`☁️ ${rows.length} palpite${rows.length>1?'s':''} sincronizado${rows.length>1?'s':''}!`);
-      console.log(`☁️ Migrated ${rows.length} preds for ${apelido}`);
+      console.log(`✅ Migrados ${rows.length} palpites de ${apelido}`);
     }
   }catch(e){
     console.error('Migrate error:',e);
@@ -724,11 +749,33 @@ async function loadUserData(apelido){
     return;
   }
   setSyncStatus('sv','Sincronizando...');
+  
+  // Primeiro carrega todos do banco
+  await loadAllPredsFromSupa();
+  
+  // Depois migra o que está local
   await migrateLocalPreds(apelido);
+  
+  // Recarrega para garantir consistência
   await loadPredsForUser(apelido);
+  
   setSyncStatus('ok','Sincronizado ✓');
   renderPalpites();
   renderRanking();
+  
+  // Log de verificação
+  const userPreds=ST.preds[apelido]||{};
+  console.log(`🔍 Verificação final - ${apelido}: ${Object.keys(userPreds).length} palpites`);
+  let totalPts=0,totalCt=0;
+  MATCHES.forEach(m=>{
+    const pr=userPreds[m.id];
+    if(pr){
+      totalCt++;
+      const pp=calcPts(pr,getRes(m.id));
+      if(pp!==null)totalPts+=pp;
+    }
+  });
+  console.log(`📊 ${apelido}: ${totalPts}pts em ${totalCt} palpites`);
 }
 
 // Realtime
@@ -952,6 +999,11 @@ function renderPalpites(){
       <button class="btn-join" onclick="openLogin()">⚽ Entrar no Bolão</button></div>`;
     return;
   }
+  
+  // Debug: mostra quantos palpites o usuário tem
+  const userPreds=ST.preds[ST.user.name]||{};
+  console.log(`🎯 Renderizando palpites para ${ST.user.name}: ${Object.keys(userPreds).length} palpites`);
+  
   let html=`<div class="sec-h">🎯 PALPITES — ${escH(ST.user.name)}</div>
   <div class="pts-legend">
     <span class="pleg"><span class="pleg-dot" style="background:var(--gold)"></span>Placar exato = 10 pts</span>
@@ -1030,7 +1082,7 @@ function renderPalpites(){
 }
 
 // ══════════════════════════════════════════════════════
-//  🏅  RENDER — RANKING (CORRIGIDO)
+//  🏅  RENDER — RANKING (CORRIGIDO - USA TODOS PALPITES)
 // ══════════════════════════════════════════════════════
 async function renderRanking(){
   const el=document.getElementById('panel-ranking');
@@ -1045,26 +1097,30 @@ async function renderRanking(){
     }
   }
 
+  // Pega TODOS os usuários que têm palpites
   const allU=[...new Set([...Object.keys(ST.preds),...(ST.user?[ST.user.name]:[])])];
-  console.log('🏅 Users for ranking:',allU);
+  console.log('🏅 Todos usuários para ranking:',allU);
   
   const lb=allU.map(u=>{
+    const userPreds=ST.preds[u]||{};
     let total=0,ct=0,ct10=0,ct5=0;
-    MATCHES.forEach(m=>{
-      const pr=(ST.preds[u]||{})[m.id];
-      if(pr){
+    
+    // Itera sobre TODOS os palpites do usuário
+    Object.keys(userPreds).forEach(mid=>{
+      const pr=userPreds[mid];
+      if(pr&&pr.h!==null&&pr.h!==undefined){
         ct++;
-        const pp=calcPts(pr,getRes(m.id));
+        const pp=calcPts(pr,getRes(parseInt(mid)));
         if(pp!==null){total+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}
       }
     });
+    
     const avg=ct>0?total/ct:0;
+    console.log(`  📊 ${u}: ${total}pts / ${ct} palpites = ${avg.toFixed(1)} avg (🎯${ct10} ✅${ct5})`);
     return{u,total,ct,ct10,ct5,avg};
   })
   .filter(x=>x.ct>0)
   .sort((a,b)=>b.avg-a.avg||b.total-a.total||b.ct10-a.ct10||b.ct5-a.ct5);
-
-  console.log('🏅 Leaderboard:',lb);
 
   const medals=['🥇','🥈','🥉'];
   const rows=lb.map((x,i)=>{
@@ -1166,14 +1222,13 @@ function updateEspnDot(){
 }
 
 // ══════════════════════════════════════════════════════
-//  👥  ADMIN - CORRIGIDO
+//  👥  ADMIN
 // ══════════════════════════════════════════════════════
 
-// CORRIGIDO: Lista usuários do localStorage E do ST.preds
 function getAllUsers(){
   const users=new Set();
   
-  // Pega do localStorage (contas cadastradas)
+  // Pega do localStorage
   for(let i=0;i<localStorage.length;i++){
     const k=localStorage.key(i);
     if(k&&k.startsWith('c26_acc_')){
@@ -1181,13 +1236,15 @@ function getAllUsers(){
     }
   }
   
-  // Pega do ST.preds (palpites que podem ter vindo do banco)
+  // Pega do ST.preds (vindos do banco)
   Object.keys(ST.preds).forEach(u=>users.add(u));
   
-  // Garante que o usuário atual está na lista
+  // Garante usuário atual
   if(ST.user)users.add(ST.user.name);
   
-  return [...users].sort();
+  const userList=[...users].sort();
+  console.log('👥 getAllUsers:',userList);
+  return userList;
 }
 
 function deleteUser(name){
@@ -1223,11 +1280,17 @@ function openPartDetail(uname){
   if(!ST.admin)return;
   
   const preds=ST.preds[uname]||{};
+  console.log(`✏️ Abrindo detalhes de ${uname}: ${Object.keys(preds).length} palpites`);
+  
   const lb=(()=>{
     let pts=0,ct=0,ct10=0,ct5=0;
-    MATCHES.forEach(m=>{
-      const pr=preds[m.id];
-      if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}}
+    Object.keys(preds).forEach(mid=>{
+      const pr=preds[mid];
+      if(pr&&pr.h!==null&&pr.h!==undefined){
+        ct++;
+        const pp=calcPts(pr,getRes(parseInt(mid)));
+        if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}
+      }
     });
     return{pts,ct,ct10,ct5};
   })();
@@ -1358,11 +1421,11 @@ function closePartDetail(){
 function updatePartDetailStats(uname){
   const preds=ST.preds[uname]||{};
   let pts=0,ct=0,ct10=0,ct5=0;
-  MATCHES.forEach(m=>{
-    const pr=preds[m.id];
-    if(pr){
+  Object.keys(preds).forEach(mid=>{
+    const pr=preds[mid];
+    if(pr&&pr.h!==null&&pr.h!==undefined){
       ct++;
-      const pp=calcPts(pr,getRes(m.id));
+      const pp=calcPts(pr,getRes(parseInt(mid)));
       if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}
     }
   });
@@ -1377,7 +1440,7 @@ function updatePartDetailStats(uname){
 }
 
 // ══════════════════════════════════════════════════════
-//  🔐  RENDER — ADMIN (CORRIGIDO)
+//  🔐  RENDER — ADMIN
 // ══════════════════════════════════════════════════════
 function renderAdmin(){
   const el=document.getElementById('panel-admin');
@@ -1399,12 +1462,13 @@ function renderAdmin(){
   console.log('👥 Admin users:',users);
   
   const lb=users.map(u=>{
+    const userPreds=ST.preds[u]||{};
     let pts=0,ct=0,ct10=0,ct5=0;
-    MATCHES.forEach(m=>{
-      const pr=(ST.preds[u]||{})[m.id];
-      if(pr){
+    Object.keys(userPreds).forEach(mid=>{
+      const pr=userPreds[mid];
+      if(pr&&pr.h!==null&&pr.h!==undefined){
         ct++;
-        const pp=calcPts(pr,getRes(m.id));
+        const pp=calcPts(pr,getRes(parseInt(mid)));
         if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}
       }
     });
@@ -1486,7 +1550,6 @@ function tryAdmin(){
   const v=document.getElementById('ap2')?.value||'';
   if(v===CFG.ADMIN_PASS){
     ST.admin=true;
-    // Carrega todos os palpites ao entrar como admin
     if(supa)loadAllPredsFromSupa().then(()=>{
       renderAdmin();
       renderTabela();
@@ -1610,20 +1673,30 @@ document.getElementById('lName').addEventListener('keypress',e=>{if(e.key==='Ent
 document.getElementById('lName').addEventListener('input',e=>updateLoginUI(e.target.value.trim()));
 
 // ══════════════════════════════════════════════════════
-//  🚀  INIT - CORRIGIDO
+//  🚀  INIT
 // ══════════════════════════════════════════════════════
 console.log('🚀 Iniciando Bolão 2026...');
+console.log('🔑 Supabase:',supa?'Conectado':'Não conectado');
 load();
 updateAuthUI();
 renderTabela();
 
 if(supa){
   syncFromSupabase().then(()=>{
-    // Carrega todos os palpites após sincronizar resultados
     return loadAllPredsFromSupa();
   }).then(()=>{
-    if(ST.user)loadUserData(ST.user.name);
+    if(ST.user){
+      console.log(`👤 Usuário logado: ${ST.user.name}`);
+      return loadUserData(ST.user.name);
+    }
+  }).then(()=>{
     console.log('✅ Inicialização completa');
+    console.log('📊 ESTADO FINAL:');
+    console.log('  Resultados:',Object.keys(ST.results).length);
+    console.log('  Usuários com palpites:',Object.keys(ST.preds));
+    Object.keys(ST.preds).forEach(u=>{
+      console.log(`    ${u}: ${Object.keys(ST.preds[u]).length} palpites`);
+    });
   }).catch(e=>{
     console.error('Init error:',e);
     if(ST.user)loadUserData(ST.user.name);
@@ -1637,12 +1710,6 @@ if(supa){
 }
 
 startEspn();
-console.log('📊 Dados carregados:',{
-  results:Object.keys(ST.results).length,
-  preds:Object.keys(ST.preds).length,
-  users:Object.keys(ST.preds),
-  currentUser:ST.user?.name
-});
 </script>
 </body>
 </html>
