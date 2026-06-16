@@ -19,6 +19,54 @@ html{scroll-behavior:smooth}
   --fh:'Bebas Neue',Impact,sans-serif;--fb:'Inter',system-ui,sans-serif;--r:13px;
 }
 body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875rem;min-height:100vh;overflow-x:hidden}
+
+/* ═══ SPLASH SCREEN ═══ */
+.splash{
+  position:fixed;inset:0;z-index:10000;
+  background:radial-gradient(ellipse 60% 40% at 50% 45%,rgba(0,140,50,.25) 0%,#020a05 80%);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .8s ease,visibility .8s ease;
+  opacity:1;visibility:visible;
+}
+.splash.hide{opacity:0;visibility:hidden;pointer-events:none}
+.splash-inner{text-align:center;animation:splashPulse 2s ease-in-out infinite}
+@keyframes splashPulse{
+  0%,100%{transform:scale(1);filter:drop-shadow(0 0 20px rgba(0,200,70,.5)) drop-shadow(0 0 40px rgba(255,215,0,.3))}
+  50%{transform:scale(1.04);filter:drop-shadow(0 0 35px rgba(0,255,90,.7)) drop-shadow(0 0 60px rgba(255,215,0,.5))}
+}
+.splash-logo{
+  width:min(280px,65vw);height:auto;
+  filter:drop-shadow(0 0 30px rgba(0,180,65,.6)) drop-shadow(0 0 60px rgba(255,215,0,.35));
+}
+.splash-title{
+  font-family:var(--fh);font-size:clamp(1.6rem,6vw,3rem);
+  letter-spacing:.08em;
+  background:linear-gradient(180deg,#fff 0%,var(--gold) 50%,#c97800 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-top:16px;
+}
+.splash-sub{
+  color:var(--muted);font-size:.75rem;letter-spacing:.12em;margin-top:6px;
+  animation:fadeInUp .6s .2s both;
+}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.splash-loader{margin-top:22px;display:flex;gap:6px;justify-content:center}
+.splash-loader span{width:8px;height:8px;background:var(--green);border-radius:50%;animation:splashDot 1s ease-in-out infinite}
+.splash-loader span:nth-child(2){animation-delay:.2s}
+.splash-loader span:nth-child(3){animation-delay:.4s}
+@keyframes splashDot{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.4)}}
+
+/* ═══ WATERMARK ═══ */
+.watermark{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+  opacity:.035;
+}
+.watermark img{
+  width:min(700px,85vw);height:auto;
+  filter:grayscale(30%) brightness(1.2);
+}
+
 .fbg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 50% at 50% 30%,rgba(0,140,40,.1) 0%,transparent 60%),linear-gradient(180deg,#030b05 0%,#05100a 35%,#081408 70%,#05100a 100%);pointer-events:none}
 .app{position:relative;z-index:1}
 .wrap{max-width:1320px;margin:0 auto;padding:0 14px}
@@ -224,6 +272,116 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
 </style>
 </head>
 <body>
+
+<!-- ═══ SPLASH SCREEN ═══ -->
+<div class="splash" id="splashScreen">
+  <div class="splash-inner">
+    <!-- Logo oficial da Copa 2026 (SVG inline com o troféu + texto) -->
+    <svg class="splash-logo" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <!-- Círculo externo dourado -->
+      <defs>
+        <radialGradient id="gld" cx="40%" cy="30%">
+          <stop offset="0%" stop-color="#fffbe6"/>
+          <stop offset="40%" stop-color="#ffd700"/>
+          <stop offset="100%" stop-color="#b8860b"/>
+        </radialGradient>
+        <radialGradient id="grn" cx="40%" cy="30%">
+          <stop offset="0%" stop-color="#00ff66"/>
+          <stop offset="60%" stop-color="#00a838"/>
+          <stop offset="100%" stop-color="#004d1a"/>
+        </radialGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- Anel externo -->
+      <circle cx="200" cy="195" r="180" fill="none" stroke="url(#gld)" stroke-width="6" opacity=".9"/>
+      <circle cx="200" cy="195" r="168" fill="none" stroke="url(#gld)" stroke-width="1.5" opacity=".5"/>
+      <!-- Troféu -->
+      <g transform="translate(200,130)" filter="url(#glow)">
+        <!-- Base do troféu -->
+        <rect x="-30" y="110" width="60" height="12" rx="4" fill="url(#gld)"/>
+        <rect x="-22" y="122" width="44" height="8" rx="3" fill="url(#gld)"/>
+        <!-- Haste -->
+        <rect x="-5" y="60" width="10" height="52" rx="3" fill="url(#gld)"/>
+        <!-- Corpo da taça -->
+        <path d="M-45,0 C-45,-20 -40,-60 -20,-80 C0,-100 0,-100 20,-80 C40,-60 45,-20 45,0 C45,25 30,50 15,60 C5,65 -5,65 -15,60 C-30,50 -45,25 -45,0Z" fill="url(#gld)"/>
+        <!-- Interior da taça -->
+        <ellipse cx="0" cy="-15" rx="28" ry="18" fill="url(#grn)" opacity=".8"/>
+        <!-- Alças -->
+        <path d="M-45,15 C-68,10 -72,30 -55,45 C-48,52 -40,56 -30,55" fill="none" stroke="url(#gld)" stroke-width="5" stroke-linecap="round"/>
+        <path d="M45,15 C68,10 72,30 55,45 C48,52 40,56 30,55" fill="none" stroke="url(#gld)" stroke-width="5" stroke-linecap="round"/>
+      </g>
+      <!-- Bola de futebol -->
+      <g transform="translate(200,290)">
+        <circle cx="0" cy="0" r="35" fill="url(#gld)" opacity=".9"/>
+        <circle cx="0" cy="0" r="35" fill="none" stroke="#b8860b" stroke-width=".8"/>
+        <path d="M-20,-15 Q0,-22 20,-15" fill="none" stroke="#b8860b" stroke-width="1.2"/>
+        <path d="M-20,15 Q0,22 20,15" fill="none" stroke="#b8860b" stroke-width="1.2"/>
+        <path d="M-22,-10 Q-26,0 -22,10" fill="none" stroke="#b8860b" stroke-width="1.2"/>
+        <path d="M22,-10 Q26,0 22,10" fill="none" stroke="#b8860b" stroke-width="1.2"/>
+      </g>
+      <!-- 2026 -->
+      <text x="200" y="348" text-anchor="middle" font-family="'Bebas Neue',Impact,sans-serif" font-size="48" font-weight="700" fill="url(#gld)" letter-spacing="8">2026</text>
+      <!-- Estrelas -->
+      <g fill="url(#gld)" opacity=".7">
+        <circle cx="95" cy="100" r="3"/>
+        <circle cx="305" cy="100" r="3"/>
+        <circle cx="70" cy="170" r="2"/>
+        <circle cx="330" cy="170" r="2"/>
+        <circle cx="60" cy="230" r="2.5"/>
+        <circle cx="340" cy="230" r="2.5"/>
+        <circle cx="200" cy="40" r="3.5"/>
+      </g>
+      <!-- WORLD CUP -->
+      <text x="200" y="375" text-anchor="middle" font-family="'Bebas Neue',Impact,sans-serif" font-size="22" fill="url(#gld)" letter-spacing="4" opacity=".85">FIFA WORLD CUP</text>
+    </svg>
+    <div class="splash-title">BOLÃO OFICIAL</div>
+    <div class="splash-sub">🇺🇸 ESTADOS UNIDOS · 🇨🇦 CANADÁ · 🇲🇽 MÉXICO</div>
+    <div class="splash-loader"><span></span><span></span><span></span></div>
+  </div>
+</div>
+
+<!-- ═══ WATERMARK ═══ -->
+<div class="watermark">
+  <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="gld2" cx="40%" cy="30%">
+        <stop offset="0%" stop-color="#fffbe6"/>
+        <stop offset="40%" stop-color="#ffd700"/>
+        <stop offset="100%" stop-color="#b8860b"/>
+      </radialGradient>
+      <radialGradient id="grn2" cx="40%" cy="30%">
+        <stop offset="0%" stop-color="#00ff66"/>
+        <stop offset="60%" stop-color="#00a838"/>
+        <stop offset="100%" stop-color="#004d1a"/>
+      </radialGradient>
+    </defs>
+    <circle cx="200" cy="195" r="180" fill="none" stroke="url(#gld2)" stroke-width="6" opacity=".9"/>
+    <circle cx="200" cy="195" r="168" fill="none" stroke="url(#gld2)" stroke-width="1.5" opacity=".5"/>
+    <g transform="translate(200,130)">
+      <rect x="-30" y="110" width="60" height="12" rx="4" fill="url(#gld2)"/>
+      <rect x="-22" y="122" width="44" height="8" rx="3" fill="url(#gld2)"/>
+      <rect x="-5" y="60" width="10" height="52" rx="3" fill="url(#gld2)"/>
+      <path d="M-45,0 C-45,-20 -40,-60 -20,-80 C0,-100 0,-100 20,-80 C40,-60 45,-20 45,0 C45,25 30,50 15,60 C5,65 -5,65 -15,60 C-30,50 -45,25 -45,0Z" fill="url(#gld2)"/>
+      <ellipse cx="0" cy="-15" rx="28" ry="18" fill="url(#grn2)" opacity=".8"/>
+      <path d="M-45,15 C-68,10 -72,30 -55,45 C-48,52 -40,56 -30,55" fill="none" stroke="url(#gld2)" stroke-width="5" stroke-linecap="round"/>
+      <path d="M45,15 C68,10 72,30 55,45 C48,52 40,56 30,55" fill="none" stroke="url(#gld2)" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(200,290)">
+      <circle cx="0" cy="0" r="35" fill="url(#gld2)" opacity=".9"/>
+      <circle cx="0" cy="0" r="35" fill="none" stroke="#b8860b" stroke-width=".8"/>
+      <path d="M-20,-15 Q0,-22 20,-15" fill="none" stroke="#b8860b" stroke-width="1.2"/>
+      <path d="M-20,15 Q0,22 20,15" fill="none" stroke="#b8860b" stroke-width="1.2"/>
+      <path d="M-22,-10 Q-26,0 -22,10" fill="none" stroke="#b8860b" stroke-width="1.2"/>
+      <path d="M22,-10 Q26,0 22,10" fill="none" stroke="#b8860b" stroke-width="1.2"/>
+    </g>
+    <text x="200" y="348" text-anchor="middle" font-family="'Bebas Neue',Impact,sans-serif" font-size="48" font-weight="700" fill="url(#gld2)" letter-spacing="8">2026</text>
+    <text x="200" y="375" text-anchor="middle" font-family="'Bebas Neue',Impact,sans-serif" font-size="22" fill="url(#gld2)" letter-spacing="4" opacity=".85">FIFA WORLD CUP</text>
+  </svg>
+</div>
+
 <div class="fbg"></div>
 <div class="app">
 <header class="hdr"><div class="wrap"><div class="hdr-in">
@@ -276,6 +434,26 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
 <footer>⚽ Copa do Mundo FIFA 2026 · 48 Seleções · 104 Jogos · 16 Cidades-Sede<br>Todos os horários em BRT (Horário de Brasília) · Sistema de Bolão 🇧🇷</footer>
 
 <script>
+// ═══ SPLASH SCREEN ═══
+(function(){
+  const splash=document.getElementById('splashScreen');
+  // Esconde o splash depois que a página carregar completamente
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      splash.classList.add('hide');
+      // Remove o splash do DOM depois da animação
+      setTimeout(function(){splash.remove();},900);
+    },1800); // 1.8 segundos de splash
+  });
+  // Fallback: se demorar mais de 5s, esconde mesmo assim
+  setTimeout(function(){
+    if(splash&&!splash.classList.contains('hide')){
+      splash.classList.add('hide');
+      setTimeout(function(){splash.remove();},900);
+    }
+  },5000);
+})();
+
 // ══════════════════════════════════════════════════════
 //  ⚙️  CONFIG
 // ══════════════════════════════════════════════════════
@@ -333,20 +511,17 @@ async function syncFromSupabase(){
   }catch(e){setSyncStatus('er','Erro BD');}
 }
 
-// Carrega palpites de TODOS os usuários do banco
 async function loadAllPredsFromSupa(){
   if(!supa)return false;
   try{
     const{data,error}=await supa.from('palpites').select('apelido,partida_id,palpite_casa,palpite_visitante');
     if(error)throw error;
     if(data&&data.length>0){
-      // Agrupa por usuário
       const cloud={};
       data.forEach(r=>{if(!cloud[r.apelido])cloud[r.apelido]={};cloud[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};});
       const currentUser=ST.user?.name;
       Object.keys(cloud).forEach(u=>{
         if(u===currentUser){
-          // Para o usuário atual: só adiciona o que não existe localmente (não sobrescreve edições)
           if(!ST.preds[u])ST.preds[u]={};
           Object.keys(cloud[u]).forEach(mid=>{if(!ST.preds[u][mid])ST.preds[u][mid]=cloud[u][mid];});
         }else{
@@ -359,7 +534,6 @@ async function loadAllPredsFromSupa(){
   }catch(e){console.warn('loadAllPreds:',e);return false;}
 }
 
-// Carrega palpites de um usuário específico (força reload do banco)
 async function loadPredsForUser(apelido){
   if(!supa)return false;
   try{
@@ -371,7 +545,6 @@ async function loadPredsForUser(apelido){
   }catch(e){return false;}
 }
 
-// Migra palpites locais do usuário para o banco
 async function migrateLocalPreds(apelido){
   if(!supa)return;
   const local=ST.preds[apelido]||{};
@@ -516,18 +689,15 @@ async function openPartDetail(uname){
   _editUser=uname;
   _changed={};
 
-  // Mostra loading
   const ov=document.getElementById('partDetailOverlay');
   ov.innerHTML=`<div class="pd-overlay open"><div class="pd-box"><div class="pd-head"><div class="pd-name"><span class="part-av" style="width:36px;height:36px;font-size:.9rem">${escH(uname[0].toUpperCase())}</span>${escH(uname)}</div><span style="color:var(--muted);font-size:.8rem">Carregando palpites do banco...</span></div></div></div>`;
 
-  // Recarrega palpites do banco para este usuário
   if(supa){
     await loadPredsForUser(uname);
   }
 
   const preds=ST.preds[uname]||{};
 
-  // Calcula stats
   function calcStats(){
     let pts=0,ct=0,ct10=0,ct5=0;
     MATCHES.forEach(m=>{
@@ -537,7 +707,6 @@ async function openPartDetail(uname){
     return{pts,ct,ct10,ct5};
   }
 
-  // Constrói tabela de palpites
   function buildRows(){
     let html='';
     Object.keys(GROUPS).forEach(g=>{
@@ -553,7 +722,6 @@ async function openPartDetail(uname){
         let predCell,resCell;
         resCell=res?`<div class="pd-res-display">${res.h}:${res.a}</div>`:`<div style="color:var(--dim);font-size:.72rem;text-align:center">—</div>`;
 
-        // Admin pode editar QUALQUER palpite, mesmo de jogos fechados
         const hv=pred!==null&&pred!==undefined?pred.h:'';
         const av=pred!==null&&pred!==undefined?pred.a:'';
         let extraClass='';
@@ -625,10 +793,8 @@ async function openPartDetail(uname){
       </div>
     </div>`;
 
-    // Listener de clique fora para fechar
     document.getElementById('pdOvInner').addEventListener('click',function(e){if(e.target===this)closePartDetail();});
 
-    // Listeners dos inputs editáveis
     document.querySelectorAll('.sinp-sm[data-pdmid]').forEach(inp=>{
       inp.addEventListener('input',function(){
         const mid=parseInt(this.dataset.pdmid);
@@ -643,18 +809,16 @@ async function openPartDetail(uname){
           _changed[mid]={h,a};
           hI.classList.add('changed');aI.classList.add('changed');
         }else{
-          _changed[mid]=null; // marcado para deletar
+          _changed[mid]=null;
           hI.classList.remove('changed');aI.classList.remove('changed');
         }
 
-        // Atualiza pontuação na linha
         const cur=_changed.hasOwnProperty(mid)?_changed[mid]:(preds[mid]||null);
         const res=getRes(mid);
         const pp=calcPts(cur,res);
         const ptsEl=document.getElementById('pdpts-'+mid);
         if(ptsEl){ptsEl.className='pd-pts '+pClass(pp);ptsEl.textContent=pLabel(pp);}
 
-        // Atualiza estatísticas do cabeçalho
         const ns=calcStats();
         const e1=document.getElementById('pd-pts'),e2=document.getElementById('pd-ct'),e3=document.getElementById('pd-ct10'),e4=document.getElementById('pd-ct5'),e5=document.getElementById('pd-changed-info');
         if(e1)e1.textContent=ns.pts;if(e2)e2.textContent=ns.ct;if(e3)e3.textContent=ns.ct10;if(e4)e4.textContent=ns.ct5;
@@ -689,7 +853,6 @@ async function savePartPreds(uname){
 
   save();
 
-  // Salva no Supabase
   if(supa){
     try{
       if(toUpsert.length>0){
@@ -704,7 +867,6 @@ async function savePartPreds(uname){
   _changed={};
   toast(`✅ ${nch} palpite${nch>1?'s':''} de ${uname} salvos!`);
 
-  // Remove indicadores de alteração
   document.querySelectorAll('.sinp-sm.changed').forEach(i=>i.classList.remove('changed'));
   const e5=document.getElementById('pd-changed-info');if(e5)e5.textContent='';
 
