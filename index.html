@@ -1062,26 +1062,42 @@ function updateEspnDot(){
 // ══════════════════════════════════════════════════════
 //  👥  ADMIN — PARTICIPANTES
 // ══════════════════════════════════════════════════════
-function getAllUsers(){
+
+// Usuários locais (só do dispositivo do admin)
+function getLocalUsers(){
   const u=[];
   for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('c26_acc_'))u.push(k.replace('c26_acc_',''));}
   return u;
 }
-function deleteUser(name){
+
+// ✅ CORREÇÃO: busca todos os apelidos distintos do banco (todos os dispositivos)
+async function getAllUsersFromSupa(){
+  if(!supa)return[];
+  try{
+    const{data,error}=await supa.from('palpites').select('apelido');
+    if(error)throw error;
+    return[...new Set((data||[]).map(r=>r.apelido))];
+  }catch(e){
+    console.warn('getAllUsersFromSupa:',e);
+    return[];
+  }
+}
+
+async function deleteUser(name){
   if(!confirm(`Excluir "${name}" e todos os palpites? Não tem como desfazer!`))return;
   localStorage.removeItem('c26_acc_'+name);
   if(ST.preds[name]){delete ST.preds[name];save();}
-  if(supa)supa.from('palpites').delete().eq('apelido',name).then(()=>{});
+  if(supa)await supa.from('palpites').delete().eq('apelido',name);
   if(ST.user&&ST.user.name===name){ST.user=null;save();updateAuthUI();}
-  renderAdmin();renderRanking();
   toast(`🗑️ "${name}" removido`);
+  renderAdmin();renderRanking();
 }
-function resetPreds(name){
+async function resetPreds(name){
   if(!confirm(`Zerar todos os palpites de "${name}"?`))return;
   if(ST.preds[name]){delete ST.preds[name];save();}
-  if(supa)supa.from('palpites').delete().eq('apelido',name).then(()=>{});
-  renderAdmin();renderRanking();
+  if(supa)await supa.from('palpites').delete().eq('apelido',name);
   toast(`🔄 Palpites de "${name}" zerados`);
+  renderAdmin();renderRanking();
 }
 function resetAllResults(){
   if(!confirm('⚠️ Zerar TODOS os resultados oficiais? Isso não pode ser desfeito!'))return;
@@ -1092,9 +1108,9 @@ function resetAllResults(){
 }
 
 // ══════════════════════════════════════════════════════
-//  🔐  RENDER — ADMIN
+//  🔐  RENDER — ADMIN ✅ CORRIGIDO (async, busca todos do banco)
 // ══════════════════════════════════════════════════════
-function renderAdmin(){
+async function renderAdmin(){
   const el=document.getElementById('panel-admin');
   if(!ST.admin){
     el.innerHTML=`<div class="sec-h">🔐 ADMINISTRADOR</div>
@@ -1109,15 +1125,35 @@ function renderAdmin(){
     </div>`;
     document.getElementById('admDot').classList.remove('show');return;
   }
-  const users=getAllUsers();
-  const lb=users.map(u=>{
+
+  // Mostra loading enquanto busca
+  document.getElementById('admDot').classList.add('show');
+  el.innerHTML=`
+  <div class="sec-h">🔐 MODO ADMIN ATIVO</div>
+  <div style="padding:40px;text-align:center;color:var(--muted)">
+    <div style="font-size:2rem;margin-bottom:10px">⏳</div>
+    <div style="font-size:.82rem">Carregando todos os participantes do banco...</div>
+  </div>`;
+
+  // ✅ CORREÇÃO PRINCIPAL: carrega palpites e usuários de TODOS os dispositivos
+  await loadAllPredsFromSupa();
+  const supaUsers = await getAllUsersFromSupa();
+  const localUsers = getLocalUsers();
+  // Mescla: usuários do banco + locais, sem duplicatas
+  const allUsers=[...new Set([...supaUsers,...localUsers])];
+
+  const lb=allUsers.map(u=>{
     let pts=0,ct=0,ct10=0,ct5=0;
-    MATCHES.forEach(m=>{const pr=(ST.preds[u]||{})[m.id];if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}}});
+    MATCHES.forEach(m=>{
+      const pr=(ST.preds[u]||{})[m.id];
+      if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}}
+    });
     return{u,pts,ct,ct10,ct5};
-  }).sort((a,b)=>b.pts-a.pts||b.ct-a.ct);
+  }).sort((a,b)=>b.pts-a.pts||b.ct10-a.ct10||b.ct-a.ct);
+
   const medals=['🥇','🥈','🥉'];
   const partRows=lb.length===0
-    ?`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nenhum participante cadastrado.</td></tr>`
+    ?`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nenhum participante encontrado.</td></tr>`
     :lb.map((x,i)=>`<tr>
       <td><strong style="color:${i<3?['var(--gold)','#bbb','#c08040'][i]:'var(--text)'}">${i<3?medals[i]:i+1}</strong></td>
       <td><div style="display:flex;align-items:center;gap:8px">
@@ -1134,11 +1170,16 @@ function renderAdmin(){
       </td>
     </tr>`).join('');
 
+  const origemInfo=supa
+    ?`☁️ <strong>${supaUsers.length}</strong> do banco · 💾 <strong>${localUsers.length}</strong> locais`
+    :`💾 Apenas locais (Supabase desconectado)`;
+
   el.innerHTML=`
   <div class="sec-h">🔐 MODO ADMIN ATIVO</div>
   <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
     <div class="adm-badge" style="background:rgba(0,196,71,.14);border-color:var(--brd-g);color:var(--gl)">✅ Admin Ativo</div>
     <button class="btn-sub ghost" style="width:auto;padding:8px 16px;font-size:.75rem;touch-action:manipulation" onclick="exitAdmin()">🔒 Sair do Admin</button>
+    <button class="act-btn rst" style="padding:8px 14px;font-size:.72rem" onclick="renderAdmin()">🔄 Atualizar lista</button>
   </div>
 
   <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:22px;font-size:.78rem;line-height:2">
@@ -1163,7 +1204,7 @@ function renderAdmin(){
   </div>
 
   <div class="sec-h" style="font-size:1.4rem">👥 PARTICIPANTES
-    <span style="font-family:var(--fb);font-size:.73rem;color:var(--muted);letter-spacing:0;font-weight:400">${lb.length} cadastrado${lb.length!==1?'s':''}</span>
+    <span style="font-family:var(--fb);font-size:.73rem;color:var(--muted);letter-spacing:0;font-weight:400">${lb.length} encontrado${lb.length!==1?'s':''} · ${origemInfo}</span>
   </div>
   <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:auto;margin-bottom:10px">
     <table class="part-table">
@@ -1177,7 +1218,6 @@ function renderAdmin(){
     🔄 Zerar — apaga palpites mas mantém a conta &nbsp;|&nbsp; 🗑️ Excluir — remove conta e palpites permanentemente
   </p>`;
 
-  document.getElementById('admDot').classList.add('show');
   updateEspnDot();
 }
 
