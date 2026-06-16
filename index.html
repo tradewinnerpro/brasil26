@@ -375,135 +375,21 @@ const CFG={
 };
 
 // ══════════════════════════════════════════════════════
-//  🌐  SUPABASE (com timeout)
+//  🌐  SUPABASE
 // ══════════════════════════════════════════════════════
 let supa=null;
-try{supa=window.supabase.createClient(CFG.SUPA_URL,CFG.SUPA_KEY);}catch(e){}
+try{supa=window.supabase.createClient(CFG.SUPA_URL,CFG.SUPA_KEY);}catch(e){console.error('Supabase init error:',e);}
 
-async function supaCall(promise,timeoutMs=8000){
+async function supaCall(promise,timeoutMs=10000){
   const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout')),timeoutMs));
   return Promise.race([promise,timeout]);
 }
 
 function setSyncStatus(s,t){
-  document.getElementById('sdot').className='sdot '+s;
-  document.getElementById('sdotTxt').textContent=t;
-}
-
-// Carrega resultados do banco
-async function syncFromSupabase(){
-  if(!supa){setSyncStatus('','Sem BD');return;}
-  try{
-    setSyncStatus('sv','Conectando...');
-    const{data,error}=await supaCall(supa.from('partidas').select('id,placar_casa,placar_visitante').lte('id',72));
-    if(error)throw error;
-    (data||[]).forEach(r=>{
-      if(r.placar_casa!==null&&r.placar_visitante!==null)
-        ST.results[r.id]={h:r.placar_casa,a:r.placar_visitante};
-    });
-    save();
-    setSyncStatus('ok','Supabase ✓');
-    refreshAllPanels();
-    subscribeRT();
-  }catch(e){
-    console.error('Supabase sync:',e);
-    setSyncStatus('er','Erro BD');
-  }
-}
-
-// Salva resultado oficial
-async function saveToSupa(id,h,a){
-  if(!supa)return;
-  setSyncStatus('sv','Salvando...');
-  try{
-    const{error}=await supaCall(supa.from('partidas').update({placar_casa:h,placar_visitante:a}).eq('id',id));
-    if(error)throw error;
-    setSyncStatus('ok','Salvo ✓');
-    setTimeout(()=>setSyncStatus('ok','Supabase ✓'),1500);
-  }catch(e){setSyncStatus('er','Erro ao salvar');}
-}
-
-// Salva palpite no banco (upsert)
-async function savePredSupa(apelido,partidaId,h,a){
-  if(!supa)return;
-  try{
-    const{error}=await supaCall(supa.from('palpites').upsert(
-      {apelido,partida_id:partidaId,palpite_casa:h,palpite_visitante:a},
-      {onConflict:'apelido,partida_id'}
-    ));
-    if(error)throw error;
-  }catch(e){console.warn('Erro palpite:',e);}
-}
-
-// Carrega palpites do banco para um usuário
-async function loadPredsFromSupa(apelido){
-  if(!supa)return false;
-  try{
-    const{data,error}=await supaCall(supa.from('palpites')
-      .select('partida_id,palpite_casa,palpite_visitante')
-      .eq('apelido',apelido));
-    if(error)throw error;
-    if(!ST.preds[apelido])ST.preds[apelido]={};
-    (data||[]).forEach(r=>{
-      ST.preds[apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
-    });
-    save();
-    return true;
-  }catch(e){return false;}
-}
-
-// Migra palpites locais → Supabase (ao fazer login)
-async function migrateLocalPreds(apelido){
-  if(!supa)return;
-  const local=ST.preds[apelido]||{};
-  const entries=Object.entries(local).filter(([,sc])=>sc&&sc.h!==null&&sc.h!==undefined);
-  if(!entries.length)return;
-  try{
-    const rows=entries.map(([id,sc])=>({
-      apelido,partida_id:parseInt(id),palpite_casa:sc.h,palpite_visitante:sc.a
-    }));
-    const{error}=await supaCall(supa.from('palpites').upsert(rows,{onConflict:'apelido,partida_id'}));
-    if(!error)toast(`☁️ ${rows.length} palpite${rows.length>1?'s':''} sincronizado${rows.length>1?'s':''}!`);
-  }catch(e){}
-}
-
-// Sincroniza palpites ao fazer login: local→nuvem, depois nuvem→local
-async function loadUserData(apelido){
-  if(!supa){renderPalpites();renderRanking();return;}
-  setSyncStatus('sv','Sincronizando...');
-  await migrateLocalPreds(apelido);
-  await loadPredsFromSupa(apelido);
-  setSyncStatus('ok','Sincronizado ✓');
-  renderPalpites();
-  renderRanking();
-}
-
-// Realtime: resultados e ranking
-function subscribeRT(){
-  if(!supa)return;
-  supa.channel('partidas-rt')
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'partidas'},p=>{
-      const r=p.new;
-      if(r.placar_casa!==null&&r.placar_visitante!==null)
-        ST.results[r.id]={h:r.placar_casa,a:r.placar_visitante};
-      else delete ST.results[r.id];
-      save();refreshAllPanels();
-      toast('⚽ Placar atualizado ao vivo!');
-    }).subscribe();
-  supa.channel('palpites-rt')
-    .on('postgres_changes',{event:'*',schema:'public',table:'palpites'},p=>{
-      const r=p.new||p.old;if(!r)return;
-      if(ST.user&&r.apelido===ST.user.name)return;
-      if(p.eventType==='DELETE'){
-        if(ST.preds[r.apelido])delete ST.preds[r.apelido][r.partida_id];
-      }else{
-        if(!ST.preds[r.apelido])ST.preds[r.apelido]={};
-        ST.preds[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
-      }
-      save();
-      if(document.querySelector('#panel-ranking.on'))renderRanking();
-      if(document.querySelector('#panel-admin.on')&&ST.admin)renderAdmin();
-    }).subscribe();
+  const dot=document.getElementById('sdot');
+  const txt=document.getElementById('sdotTxt');
+  if(dot)dot.className='sdot '+s;
+  if(txt)txt.textContent=t;
 }
 
 // ══════════════════════════════════════════════════════
@@ -631,37 +517,248 @@ const MATCHES=[
 ];
 
 // ══════════════════════════════════════════════════════
-//  💾  ESTADO
+//  💾  ESTADO - CORRIGIDO
 // ══════════════════════════════════════════════════════
 let ST={user:null,admin:false,results:{},preds:{}};
+
 function load(){
   try{
     const r=localStorage.getItem('c26r');if(r)ST.results=JSON.parse(r);
     const p=localStorage.getItem('c26p');if(p)ST.preds=JSON.parse(p);
     const u=localStorage.getItem('c26u');if(u)ST.user=JSON.parse(u);
-  }catch(e){}
+    console.log('📦 Loaded:',{
+      results:Object.keys(ST.results).length,
+      preds:Object.keys(ST.preds).length,
+      users:Object.keys(ST.preds),
+      user:ST.user?.name
+    });
+  }catch(e){console.error('Load error:',e);}
 }
+
 function save(){
-  localStorage.setItem('c26r',JSON.stringify(ST.results));
-  localStorage.setItem('c26p',JSON.stringify(ST.preds));
-  if(ST.user)localStorage.setItem('c26u',JSON.stringify(ST.user));
-  else localStorage.removeItem('c26u');
+  try{
+    localStorage.setItem('c26r',JSON.stringify(ST.results));
+    localStorage.setItem('c26p',JSON.stringify(ST.preds));
+    if(ST.user)localStorage.setItem('c26u',JSON.stringify(ST.user));
+    else localStorage.removeItem('c26u');
+    console.log('💾 Saved');
+  }catch(e){console.error('Save error:',e);}
 }
+
 const getRes=id=>ST.results[id]||null;
 const getPred=id=>ST.user?(ST.preds[ST.user.name]||{})[id]||null:null;
-function setRes(id,h,a){ST.results[id]={h,a};save();if(supa)saveToSupa(id,h,a);}
+
+function setRes(id,h,a){
+  ST.results[id]={h,a};save();
+  if(supa)saveToSupa(id,h,a);
+}
+
 function delRes(id){delete ST.results[id];save();}
+
 function setPred(id,h,a){
   if(!ST.user)return;
   if(!ST.preds[ST.user.name])ST.preds[ST.user.name]={};
   ST.preds[ST.user.name][id]={h,a};save();
-  savePredSupa(ST.user.name,id,h,a);
+  if(supa)savePredSupa(ST.user.name,id,h,a);
 }
+
 function delPred(id){
   if(!ST.user)return;
   if(ST.preds[ST.user.name])delete ST.preds[ST.user.name][id];
   save();
-  if(supa)supa.from('palpites').delete().eq('apelido',ST.user.name).eq('partida_id',id).then(()=>{});
+  if(supa)supa.from('palpites').delete().eq('apelido',ST.user.name).eq('partida_id',id).then(()=>{}).catch(()=>{});
+}
+
+// ══════════════════════════════════════════════════════
+//  ☁️  SUPABASE OPERATIONS - CORRIGIDO
+// ══════════════════════════════════════════════════════
+
+// Carrega resultados do banco
+async function syncFromSupabase(){
+  if(!supa){setSyncStatus('er','Sem BD');return;}
+  try{
+    setSyncStatus('sv','Conectando...');
+    const{data,error}=await supaCall(supa.from('partidas').select('id,placar_casa,placar_visitante').lte('id',72));
+    if(error)throw error;
+    if(data){
+      data.forEach(r=>{
+        if(r.placar_casa!==null&&r.placar_visitante!==null)
+          ST.results[r.id]={h:r.placar_casa,a:r.placar_visitante};
+      });
+      save();
+      console.log('☁️ Results synced:',data.length);
+    }
+    setSyncStatus('ok','Supabase ✓');
+    refreshAllPanels();
+    subscribeRT();
+  }catch(e){
+    console.error('Supabase sync error:',e);
+    setSyncStatus('er','Erro BD');
+  }
+}
+
+// Salva resultado oficial
+async function saveToSupa(id,h,a){
+  if(!supa)return;
+  try{
+    setSyncStatus('sv','Salvando...');
+    const{error}=await supaCall(supa.from('partidas').update({placar_casa:h,placar_visitante:a}).eq('id',id));
+    if(error)throw error;
+    setSyncStatus('ok','Salvo ✓');
+    setTimeout(()=>setSyncStatus('ok','Supabase ✓'),1500);
+  }catch(e){
+    console.error('Save to Supa error:',e);
+    setSyncStatus('er','Erro ao salvar');
+  }
+}
+
+// Salva palpite no banco
+async function savePredSupa(apelido,partidaId,h,a){
+  if(!supa)return;
+  try{
+    const{error}=await supaCall(supa.from('palpites').upsert(
+      {apelido,partida_id:partidaId,palpite_casa:h,palpite_visitante:a},
+      {onConflict:'apelido,partida_id'}
+    ));
+    if(error)throw error;
+  }catch(e){console.warn('Save pred error:',e);}
+}
+
+// Carrega TODOS os palpites do banco - CORRIGIDO
+async function loadAllPredsFromSupa(){
+  if(!supa)return false;
+  try{
+    console.log('☁️ Loading all preds from Supabase...');
+    const{data,error}=await supaCall(
+      supa.from('palpites').select('apelido,partida_id,palpite_casa,palpite_visitante')
+    );
+    if(error)throw error;
+    
+    if(data){
+      // Não sobrescreve palpites do usuário atual
+      const currentUser=ST.user?.name;
+      const newPreds={};
+      
+      data.forEach(r=>{
+        if(!newPreds[r.apelido])newPreds[r.apelido]={};
+        newPreds[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
+      });
+      
+      // Mescla com dados locais (preserva usuário atual)
+      Object.keys(newPreds).forEach(u=>{
+        if(u!==currentUser){
+          ST.preds[u]=newPreds[u];
+        }else{
+          // Para usuário atual, mescla sem sobrescrever
+          if(!ST.preds[u])ST.preds[u]={};
+          Object.keys(newPreds[u]||{}).forEach(mid=>{
+            if(!ST.preds[u][mid]){
+              ST.preds[u][mid]=newPreds[u][mid];
+            }
+          });
+        }
+      });
+      
+      save();
+      console.log('☁️ Loaded preds for users:',Object.keys(ST.preds));
+      return true;
+    }
+    return false;
+  }catch(e){
+    console.error('Load all preds error:',e);
+    return false;
+  }
+}
+
+// Carrega palpites de um usuário específico
+async function loadPredsForUser(apelido){
+  if(!supa)return false;
+  try{
+    const{data,error}=await supaCall(
+      supa.from('palpites')
+        .select('partida_id,palpite_casa,palpite_visitante')
+        .eq('apelido',apelido)
+    );
+    if(error)throw error;
+    if(data){
+      if(!ST.preds[apelido])ST.preds[apelido]={};
+      data.forEach(r=>{
+        ST.preds[apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
+      });
+      save();
+      console.log(`☁️ Loaded preds for ${apelido}:`,data.length);
+      return true;
+    }
+    return false;
+  }catch(e){
+    console.error('Load preds for user error:',e);
+    return false;
+  }
+}
+
+// Migra palpites locais → Supabase
+async function migrateLocalPreds(apelido){
+  if(!supa)return;
+  const local=ST.preds[apelido]||{};
+  const entries=Object.entries(local).filter(([,sc])=>sc&&sc.h!==null&&sc.h!==undefined);
+  if(!entries.length)return;
+  try{
+    const rows=entries.map(([id,sc])=>({
+      apelido,partida_id:parseInt(id),palpite_casa:sc.h,palpite_visitante:sc.a
+    }));
+    const{error}=await supaCall(supa.from('palpites').upsert(rows,{onConflict:'apelido,partida_id'}));
+    if(!error){
+      toast(`☁️ ${rows.length} palpite${rows.length>1?'s':''} sincronizado${rows.length>1?'s':''}!`);
+      console.log(`☁️ Migrated ${rows.length} preds for ${apelido}`);
+    }
+  }catch(e){
+    console.error('Migrate error:',e);
+  }
+}
+
+// Sincroniza ao fazer login
+async function loadUserData(apelido){
+  if(!supa){
+    renderPalpites();
+    renderRanking();
+    return;
+  }
+  setSyncStatus('sv','Sincronizando...');
+  await migrateLocalPreds(apelido);
+  await loadPredsForUser(apelido);
+  setSyncStatus('ok','Sincronizado ✓');
+  renderPalpites();
+  renderRanking();
+}
+
+// Realtime
+function subscribeRT(){
+  if(!supa)return;
+  
+  supa.channel('partidas-rt')
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'partidas'},p=>{
+      const r=p.new;
+      if(r.placar_casa!==null&&r.placar_visitante!==null)
+        ST.results[r.id]={h:r.placar_casa,a:r.placar_visitante};
+      else delete ST.results[r.id];
+      save();refreshAllPanels();
+      toast('⚽ Placar atualizado ao vivo!');
+    }).subscribe();
+    
+  supa.channel('palpites-rt')
+    .on('postgres_changes',{event:'*',schema:'public',table:'palpites'},p=>{
+      const r=p.new||p.old;if(!r)return;
+      if(ST.user&&r.apelido===ST.user.name)return;
+      if(p.eventType==='DELETE'){
+        if(ST.preds[r.apelido])delete ST.preds[r.apelido][r.partida_id];
+      }else{
+        if(!ST.preds[r.apelido])ST.preds[r.apelido]={};
+        ST.preds[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
+      }
+      save();
+      if(document.querySelector('#panel-ranking.on'))renderRanking();
+      if(document.querySelector('#panel-admin.on')&&ST.admin)renderAdmin();
+    }).subscribe();
 }
 
 // ══════════════════════════════════════════════════════
@@ -825,7 +922,7 @@ function updateInlineStandings(mid){
 }
 
 // ══════════════════════════════════════════════════════
-//  ⏱️  CONTROLE DE TEMPO — bloqueio 5 min antes
+//  ⏱️  CONTROLE DE TEMPO
 // ══════════════════════════════════════════════════════
 function getMatchUTC(m){
   const[d,mo]=m.dt.split('/').map(Number);
@@ -844,7 +941,7 @@ function fmtCountdown(ms){
 }
 
 // ══════════════════════════════════════════════════════
-//  🎯  RENDER — PALPITES (com bloqueio de tempo)
+//  🎯  RENDER — PALPITES
 // ══════════════════════════════════════════════════════
 function renderPalpites(){
   const el=document.getElementById('panel-palpites');
@@ -933,7 +1030,7 @@ function renderPalpites(){
 }
 
 // ══════════════════════════════════════════════════════
-//  🏅  RENDER — RANKING (Supabase + fallback local)
+//  🏅  RENDER — RANKING (CORRIGIDO)
 // ══════════════════════════════════════════════════════
 async function renderRanking(){
   const el=document.getElementById('panel-ranking');
@@ -942,20 +1039,15 @@ async function renderRanking(){
   let isCloud=false;
   if(supa){
     try{
-      const{data,error}=await supaCall(supa.from('palpites').select('apelido,partida_id,palpite_casa,palpite_visitante'));
-      if(!error&&data){
-        data.forEach(r=>{
-          if(ST.user&&r.apelido===ST.user.name)return;
-          if(!ST.preds[r.apelido])ST.preds[r.apelido]={};
-          ST.preds[r.apelido][r.partida_id]={h:r.palpite_casa,a:r.palpite_visitante};
-        });
-        save();
-        isCloud=true;
-      }
-    }catch(e){}
+      isCloud=await loadAllPredsFromSupa();
+    }catch(e){
+      console.error('Ranking load error:',e);
+    }
   }
 
   const allU=[...new Set([...Object.keys(ST.preds),...(ST.user?[ST.user.name]:[])])];
+  console.log('🏅 Users for ranking:',allU);
+  
   const lb=allU.map(u=>{
     let total=0,ct=0,ct10=0,ct5=0;
     MATCHES.forEach(m=>{
@@ -972,12 +1064,14 @@ async function renderRanking(){
   .filter(x=>x.ct>0)
   .sort((a,b)=>b.avg-a.avg||b.total-a.total||b.ct10-a.ct10||b.ct5-a.ct5);
 
+  console.log('🏅 Leaderboard:',lb);
+
   const medals=['🥇','🥈','🥉'];
   const rows=lb.map((x,i)=>{
     const me=ST.user&&x.u===ST.user.name;
     return`<div class="rk-row${me?' me':''}">
       <div class="rk-pos ${i<3?'rp'+(i+1):''}">${i<3?medals[i]:i+1}</div>
-      <div class="rk-av">${x.u[0].toUpperCase()}</div>
+      <div class="rk-av">${escH(x.u[0].toUpperCase())}</div>
       <div class="rk-name">${escH(x.u)}${me?'<span class="rk-me">você</span>':''}</div>
       <div style="text-align:right">
         <div class="rk-pts">${x.avg.toFixed(1)}<span style="font-size:.58rem;color:var(--muted);font-family:var(--fb);font-weight:400"> pts/palp</span></div>
@@ -995,7 +1089,7 @@ async function renderRanking(){
 }
 
 // ══════════════════════════════════════════════════════
-//  🌐  ESPN — RESULTADOS AUTOMÁTICOS
+//  🌐  ESPN
 // ══════════════════════════════════════════════════════
 const ESPN_MAP={
   'Brazil':'Brasil','Morocco':'Marrocos','Haiti':'Haiti','Scotland':'Escócia',
@@ -1016,7 +1110,7 @@ const ESPN_MAP={
   'Colombia':'Colômbia','England':'Inglaterra','Croatia':'Croácia','Ghana':'Gana','Panama':'Panamá',
 };
 function espnName(n){return ESPN_MAP[n]||n;}
-let espnTimer=null,lastEspnFetch=null,espnCount=0;
+let espnTimer=null,lastEspnFetch=null;
 
 async function fetchEspn(silent=false){
   let updated=0;
@@ -1030,7 +1124,7 @@ async function fetchEspn(silent=false){
       const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${dt}`,{cache:'no-store'});
       if(!r.ok)continue;
       const data=await r.json();
-      lastEspnFetch=new Date();espnCount++;
+      lastEspnFetch=new Date();
       (data.events||[]).forEach(ev=>{
         const comp=ev.competitions?.[0];if(!comp)return;
         const sn=comp.status?.type?.name||'';
@@ -1072,33 +1166,52 @@ function updateEspnDot(){
 }
 
 // ══════════════════════════════════════════════════════
-//  👥  ADMIN — PARTICIPANTES
+//  👥  ADMIN - CORRIGIDO
 // ══════════════════════════════════════════════════════
+
+// CORRIGIDO: Lista usuários do localStorage E do ST.preds
 function getAllUsers(){
-  const u=[];
-  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('c26_acc_'))u.push(k.replace('c26_acc_',''));}
-  return u;
+  const users=new Set();
+  
+  // Pega do localStorage (contas cadastradas)
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.startsWith('c26_acc_')){
+      users.add(k.replace('c26_acc_',''));
+    }
+  }
+  
+  // Pega do ST.preds (palpites que podem ter vindo do banco)
+  Object.keys(ST.preds).forEach(u=>users.add(u));
+  
+  // Garante que o usuário atual está na lista
+  if(ST.user)users.add(ST.user.name);
+  
+  return [...users].sort();
 }
+
 function deleteUser(name){
   if(!confirm(`Excluir "${name}" e todos os palpites? Não tem como desfazer!`))return;
   localStorage.removeItem('c26_acc_'+name);
   if(ST.preds[name]){delete ST.preds[name];save();}
-  if(supa)supa.from('palpites').delete().eq('apelido',name).then(()=>{});
+  if(supa)supa.from('palpites').delete().eq('apelido',name).then(()=>{}).catch(()=>{});
   if(ST.user&&ST.user.name===name){ST.user=null;save();updateAuthUI();}
   renderAdmin();renderRanking();
   toast(`🗑️ "${name}" removido`);
 }
+
 function resetPreds(name){
   if(!confirm(`Zerar todos os palpites de "${name}"?`))return;
   if(ST.preds[name]){delete ST.preds[name];save();}
-  if(supa)supa.from('palpites').delete().eq('apelido',name).then(()=>{});
+  if(supa)supa.from('palpites').delete().eq('apelido',name).then(()=>{}).catch(()=>{});
   renderAdmin();renderRanking();
   toast(`🔄 Palpites de "${name}" zerados`);
 }
+
 function resetAllResults(){
   if(!confirm('⚠️ Zerar TODOS os resultados oficiais? Isso não pode ser desfeito!'))return;
   ST.results={};save();
-  if(supa)supa.from('partidas').update({placar_casa:null,placar_visitante:null}).lte('id',72).then(()=>{});
+  if(supa)supa.from('partidas').update({placar_casa:null,placar_visitante:null}).lte('id',72).then(()=>{}).catch(()=>{});
   refreshAllPanels();
   toast('🗑️ Todos os resultados foram zerados');
 }
@@ -1215,7 +1328,7 @@ function openPartDetail(uname){
             supa.from('palpites').upsert(
               {apelido:user,partida_id:mid,palpite_casa:h,palpite_visitante:a},
               {onConflict:'apelido,partida_id'}
-            ).then(()=>{});
+            ).then(()=>{}).catch(()=>{});
           }
         }
         
@@ -1264,7 +1377,7 @@ function updatePartDetailStats(uname){
 }
 
 // ══════════════════════════════════════════════════════
-//  🔐  RENDER — ADMIN
+//  🔐  RENDER — ADMIN (CORRIGIDO)
 // ══════════════════════════════════════════════════════
 function renderAdmin(){
   const el=document.getElementById('panel-admin');
@@ -1281,19 +1394,30 @@ function renderAdmin(){
     </div>`;
     document.getElementById('admDot').classList.remove('show');return;
   }
+  
   const users=getAllUsers();
+  console.log('👥 Admin users:',users);
+  
   const lb=users.map(u=>{
     let pts=0,ct=0,ct10=0,ct5=0;
-    MATCHES.forEach(m=>{const pr=(ST.preds[u]||{})[m.id];if(pr){ct++;const pp=calcPts(pr,getRes(m.id));if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}}});
+    MATCHES.forEach(m=>{
+      const pr=(ST.preds[u]||{})[m.id];
+      if(pr){
+        ct++;
+        const pp=calcPts(pr,getRes(m.id));
+        if(pp!==null){pts+=pp;if(pp===10)ct10++;if(pp===5)ct5++;}
+      }
+    });
     return{u,pts,ct,ct10,ct5};
   }).sort((a,b)=>b.pts-a.pts||b.ct-a.ct);
+  
   const medals=['🥇','🥈','🥉'];
   const partRows=lb.length===0
     ?`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nenhum participante cadastrado.</td></tr>`
     :lb.map((x,i)=>`<tr>
       <td><strong style="color:${i<3?['var(--gold)','#bbb','#c08040'][i]:'var(--text)'}">${i<3?medals[i]:i+1}</strong></td>
       <td><div style="display:flex;align-items:center;gap:8px">
-        <div class="part-av">${x.u[0].toUpperCase()}</div>
+        <div class="part-av">${escH(x.u[0].toUpperCase())}</div>
         <span style="font-size:.8rem;font-weight:600">${escH(x.u)}${ST.user&&x.u===ST.user.name?' <span style="font-size:.58rem;color:var(--green)">(você)</span>':''}</span>
       </div></td>
       <td><strong style="color:var(--gold)">${x.pts}</strong></td>
@@ -1323,20 +1447,24 @@ function renderAdmin(){
           <span class="auto-dot on" id="liveDot"></span>
           <span id="liveTxt" style="font-size:.68rem;color:var(--muted)">Ativo (45s)</span>
         </span>
+        &nbsp;|&nbsp;
+        👥 Usuários: <strong style="color:var(--gold)">${users.length}</strong>
       </div>
       <div style="display:flex;gap:6px">
-        <button class="act-btn rst" onclick="fetchEspn(false)">🔄 Buscar ESPN Agora</button>
+        <button class="act-btn rst" onclick="fetchEspn(false)">🔄 Buscar ESPN</button>
+        <button class="act-btn rst" onclick="loadAllPredsFromSupa().then(()=>{renderAdmin();renderRanking();toast('☁️ Palpites recarregados!');})">☁️ Recarregar BD</button>
         <button class="act-btn del" onclick="resetAllResults()">🗑️ Zerar Resultados</button>
       </div>
     </div>
     <div style="font-size:.66rem;color:var(--dim);margin-top:6px;line-height:1.6">
-      ⚡ ESPN busca automaticamente a cada 45 segundos durante a Copa (11 Jun – 19 Jul 2026).<br>
-      ✏️ Para editar resultados manualmente: aba 📊 <strong style="color:var(--text)">Tabela</strong> (modo admin ativo).
+      ⚡ ESPN busca automática a cada 45s (11 Jun – 19 Jul 2026).<br>
+      ✏️ Resultados manuais: aba 📊 <strong style="color:var(--text)">Tabela</strong> (admin ativo).<br>
+      ☁️ Recarregar BD: força busca de todos os palpites do Supabase.
     </div>
   </div>
 
   <div class="sec-h" style="font-size:1.4rem">👥 PARTICIPANTES
-    <span style="font-family:var(--fb);font-size:.73rem;color:var(--muted);letter-spacing:0;font-weight:400">${lb.length} cadastrado${lb.length!==1?'s':''}</span>
+    <span style="font-family:var(--fb);font-size:.73rem;color:var(--muted);letter-spacing:0;font-weight:400">${users.length} cadastrado${users.length!==1?'s':''}</span>
   </div>
   <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:auto;margin-bottom:10px">
     <table class="part-table">
@@ -1347,7 +1475,7 @@ function renderAdmin(){
     </table>
   </div>
   <p style="font-size:.64rem;color:var(--dim);margin-bottom:22px">
-    ✏️ Editar — abre os palpites do participante &nbsp;|&nbsp; 🔄 Zerar — apaga palpites mas mantém a conta &nbsp;|&nbsp; 🗑️ Excluir — remove conta e palpites permanentemente
+    ✏️ Editar — abre palpites &nbsp;|&nbsp; 🔄 Zerar — apaga palpites &nbsp;|&nbsp; 🗑️ Excluir — remove conta
   </p>`;
 
   document.getElementById('admDot').classList.add('show');
@@ -1356,10 +1484,28 @@ function renderAdmin(){
 
 function tryAdmin(){
   const v=document.getElementById('ap2')?.value||'';
-  if(v===CFG.ADMIN_PASS){ST.admin=true;renderAdmin();renderTabela();toast('✅ Admin ativado!');}
+  if(v===CFG.ADMIN_PASS){
+    ST.admin=true;
+    // Carrega todos os palpites ao entrar como admin
+    if(supa)loadAllPredsFromSupa().then(()=>{
+      renderAdmin();
+      renderTabela();
+      toast('✅ Admin ativado! Palpites carregados do banco.');
+    }).catch(()=>{
+      renderAdmin();
+      renderTabela();
+      toast('✅ Admin ativado! (offline)');
+    });
+  }
   else toast('❌ Senha incorreta.');
 }
-function exitAdmin(){ST.admin=false;renderAdmin();renderTabela();toast('🔒 Admin desativado.');}
+
+function exitAdmin(){
+  ST.admin=false;
+  renderAdmin();
+  renderTabela();
+  toast('🔒 Admin desativado.');
+}
 
 // ══════════════════════════════════════════════════════
 //  🔑  AUTH
@@ -1453,7 +1599,10 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
   });
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape')document.querySelectorAll('.modal-ov.open').forEach(m=>closeModal(m.id));
+  if(e.key==='Escape'){
+    document.querySelectorAll('.modal-ov.open').forEach(m=>closeModal(m.id));
+    closePartDetail();
+  }
 });
 document.querySelectorAll('.modal-ov').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);}));
 document.getElementById('lPass').addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
@@ -1461,14 +1610,39 @@ document.getElementById('lName').addEventListener('keypress',e=>{if(e.key==='Ent
 document.getElementById('lName').addEventListener('input',e=>updateLoginUI(e.target.value.trim()));
 
 // ══════════════════════════════════════════════════════
-//  🚀  INIT
+//  🚀  INIT - CORRIGIDO
 // ══════════════════════════════════════════════════════
+console.log('🚀 Iniciando Bolão 2026...');
 load();
 updateAuthUI();
 renderTabela();
-if(supa){syncFromSupabase();}else{setSyncStatus('','Sem Supabase');}
+
+if(supa){
+  syncFromSupabase().then(()=>{
+    // Carrega todos os palpites após sincronizar resultados
+    return loadAllPredsFromSupa();
+  }).then(()=>{
+    if(ST.user)loadUserData(ST.user.name);
+    console.log('✅ Inicialização completa');
+  }).catch(e=>{
+    console.error('Init error:',e);
+    if(ST.user)loadUserData(ST.user.name);
+  });
+}else{
+  setSyncStatus('er','Sem Supabase');
+  if(ST.user){
+    renderPalpites();
+    renderRanking();
+  }
+}
+
 startEspn();
-if(ST.user)loadUserData(ST.user.name);
+console.log('📊 Dados carregados:',{
+  results:Object.keys(ST.results).length,
+  preds:Object.keys(ST.preds).length,
+  users:Object.keys(ST.preds),
+  currentUser:ST.user?.name
+});
 </script>
 </body>
 </html>
