@@ -397,113 +397,154 @@ function fi(t,w=26){const c=FC[t],h=Math.round(w*.67),b=`display:inline-block;wi
 function fiSm(t){const c=FC[t];if(!c)return'';return`<span class="fi fi-${c}" style="display:inline-block;width:20px;height:14px;border-radius:2px;opacity:.8;vertical-align:middle;box-shadow:0 1px 3px rgba(0,0,0,.4)"></span>`;}
 
 // ══════════════════════════════════════════════════════
-//  🌍  GRUPOS + JOGOS (TUDO ORIGINAL)
+//  🌍  GRUPOS + JOGOS DA FASE DE GRUPOS (ORIGINAL)
 // ══════════════════════════════════════════════════════
 const GROUPS={A:['México','África do Sul','Coreia do Sul','República Tcheca'],B:['Canadá','Catar','Suíça','Bósnia e Herzegovina'],C:['Brasil','Marrocos','Haiti','Escócia'],D:['Estados Unidos','Paraguai','Austrália','Turquia'],E:['Alemanha','Curaçao','Costa do Marfim','Equador'],F:['Holanda','Japão','Suécia','Tunísia'],G:['Bélgica','Egito','Irã','Nova Zelândia'],H:['Espanha','Cabo Verde','Arábia Saudita','Uruguai'],I:['França','Senegal','Iraque','Noruega'],J:['Argentina','Argélia','Áustria','Jordânia'],K:['Portugal','RD do Congo','Uzbequistão','Colômbia'],L:['Inglaterra','Croácia','Gana','Panamá']};
 const MATCHES=[{id:1,g:'A',r:1,dt:'11/06',tm:'16:00',h:'México',a:'África do Sul',ci:'Cidade do México'},{id:2,g:'A',r:1,dt:'11/06',tm:'23:00',h:'Coreia do Sul',a:'República Tcheca',ci:'Guadalajara'},{id:3,g:'A',r:2,dt:'18/06',tm:'13:00',h:'República Tcheca',a:'África do Sul',ci:'Atlanta'},{id:4,g:'A',r:2,dt:'18/06',tm:'22:00',h:'México',a:'Coreia do Sul',ci:'Guadalajara'},{id:5,g:'A',r:3,dt:'24/06',tm:'22:00',h:'África do Sul',a:'Coreia do Sul',ci:'Monterrey'},{id:6,g:'A',r:3,dt:'24/06',tm:'22:00',h:'República Tcheca',a:'México',ci:'Cidade do México'},{id:7,g:'B',r:1,dt:'12/06',tm:'16:00',h:'Canadá',a:'Bósnia e Herzegovina',ci:'Toronto'},{id:8,g:'B',r:1,dt:'13/06',tm:'16:00',h:'Catar',a:'Suíça',ci:'Santa Clara'},{id:9,g:'B',r:2,dt:'18/06',tm:'16:00',h:'Suíça',a:'Bósnia e Herzegovina',ci:'Los Angeles'},{id:10,g:'B',r:2,dt:'18/06',tm:'19:00',h:'Canadá',a:'Catar',ci:'Vancouver'},{id:11,g:'B',r:3,dt:'24/06',tm:'16:00',h:'Suíça',a:'Canadá',ci:'Vancouver'},{id:12,g:'B',r:3,dt:'24/06',tm:'16:00',h:'Bósnia e Herzegovina',a:'Catar',ci:'Seattle'},{id:13,g:'C',r:1,dt:'13/06',tm:'19:00',h:'Brasil',a:'Marrocos',ci:'Nova York / NJ'},{id:14,g:'C',r:1,dt:'13/06',tm:'22:00',h:'Haiti',a:'Escócia',ci:'Boston'},{id:15,g:'C',r:2,dt:'19/06',tm:'19:00',h:'Escócia',a:'Marrocos',ci:'Boston'},{id:16,g:'C',r:2,dt:'19/06',tm:'21:30',h:'Brasil',a:'Haiti',ci:'Filadélfia'},{id:17,g:'C',r:3,dt:'24/06',tm:'19:00',h:'Escócia',a:'Brasil',ci:'Miami'},{id:18,g:'C',r:3,dt:'24/06',tm:'19:00',h:'Marrocos',a:'Haiti',ci:'Atlanta'},{id:19,g:'D',r:1,dt:'12/06',tm:'22:00',h:'Estados Unidos',a:'Paraguai',ci:'Los Angeles'},{id:20,g:'D',r:1,dt:'13/06',tm:'01:00',h:'Austrália',a:'Turquia',ci:'Vancouver'},{id:21,g:'D',r:2,dt:'20/06',tm:'01:00',h:'Turquia',a:'Paraguai',ci:'Santa Clara'},{id:22,g:'D',r:2,dt:'19/06',tm:'16:00',h:'Estados Unidos',a:'Austrália',ci:'Seattle'},{id:23,g:'D',r:3,dt:'25/06',tm:'23:00',h:'Turquia',a:'Estados Unidos',ci:'Los Angeles'},{id:24,g:'D',r:3,dt:'25/06',tm:'23:00',h:'Paraguai',a:'Austrália',ci:'Santa Clara'},{id:25,g:'E',r:1,dt:'14/06',tm:'14:00',h:'Alemanha',a:'Curaçao',ci:'Houston'},{id:26,g:'E',r:1,dt:'14/06',tm:'20:00',h:'Costa do Marfim',a:'Equador',ci:'Filadélfia'},{id:27,g:'E',r:2,dt:'20/06',tm:'17:00',h:'Alemanha',a:'Costa do Marfim',ci:'Toronto'},{id:28,g:'E',r:2,dt:'20/06',tm:'21:00',h:'Equador',a:'Curaçao',ci:'Kansas City'},{id:29,g:'E',r:3,dt:'25/06',tm:'17:00',h:'Equador',a:'Alemanha',ci:'Nova York / NJ'},{id:30,g:'E',r:3,dt:'25/06',tm:'17:00',h:'Curaçao',a:'Costa do Marfim',ci:'Filadélfia'},{id:31,g:'F',r:1,dt:'14/06',tm:'17:00',h:'Holanda',a:'Japão',ci:'Dallas'},{id:32,g:'F',r:1,dt:'14/06',tm:'23:00',h:'Suécia',a:'Tunísia',ci:'Monterrey'},{id:33,g:'F',r:2,dt:'20/06',tm:'14:00',h:'Holanda',a:'Suécia',ci:'Houston'},{id:34,g:'F',r:2,dt:'21/06',tm:'01:00',h:'Tunísia',a:'Japão',ci:'Monterrey'},{id:35,g:'F',r:3,dt:'25/06',tm:'20:00',h:'Japão',a:'Suécia',ci:'Dallas'},{id:36,g:'F',r:3,dt:'25/06',tm:'20:00',h:'Tunísia',a:'Holanda',ci:'Kansas City'},{id:37,g:'G',r:1,dt:'15/06',tm:'16:00',h:'Bélgica',a:'Egito',ci:'Seattle'},{id:38,g:'G',r:1,dt:'15/06',tm:'22:00',h:'Irã',a:'Nova Zelândia',ci:'Los Angeles'},{id:39,g:'G',r:2,dt:'21/06',tm:'16:00',h:'Bélgica',a:'Irã',ci:'Los Angeles'},{id:40,g:'G',r:2,dt:'21/06',tm:'22:00',h:'Nova Zelândia',a:'Egito',ci:'Vancouver'},{id:41,g:'G',r:3,dt:'26/06',tm:'00:00',h:'Egito',a:'Irã',ci:'Seattle'},{id:42,g:'G',r:3,dt:'26/06',tm:'00:00',h:'Nova Zelândia',a:'Bélgica',ci:'Vancouver'},{id:43,g:'H',r:1,dt:'15/06',tm:'13:00',h:'Espanha',a:'Cabo Verde',ci:'Atlanta'},{id:44,g:'H',r:1,dt:'15/06',tm:'19:00',h:'Arábia Saudita',a:'Uruguai',ci:'Miami'},{id:45,g:'H',r:2,dt:'21/06',tm:'13:00',h:'Espanha',a:'Arábia Saudita',ci:'Atlanta'},{id:46,g:'H',r:2,dt:'21/06',tm:'19:00',h:'Uruguai',a:'Cabo Verde',ci:'Miami'},{id:47,g:'H',r:3,dt:'26/06',tm:'21:00',h:'Cabo Verde',a:'Arábia Saudita',ci:'Houston'},{id:48,g:'H',r:3,dt:'26/06',tm:'21:00',h:'Uruguai',a:'Espanha',ci:'Guadalajara'},{id:49,g:'I',r:1,dt:'16/06',tm:'16:00',h:'França',a:'Senegal',ci:'Dallas'},{id:50,g:'I',r:1,dt:'16/06',tm:'19:00',h:'Iraque',a:'Noruega',ci:'Kansas City'},{id:51,g:'I',r:2,dt:'22/06',tm:'18:00',h:'França',a:'Iraque',ci:'Santa Clara'},{id:52,g:'I',r:2,dt:'22/06',tm:'21:00',h:'Noruega',a:'Senegal',ci:'Houston'},{id:53,g:'I',r:3,dt:'26/06',tm:'16:00',h:'Noruega',a:'França',ci:'Nova York / NJ'},{id:54,g:'I',r:3,dt:'26/06',tm:'16:00',h:'Senegal',a:'Iraque',ci:'Atlanta'},{id:55,g:'J',r:1,dt:'16/06',tm:'22:00',h:'Argentina',a:'Argélia',ci:'Kansas City'},{id:56,g:'J',r:1,dt:'17/06',tm:'01:00',h:'Áustria',a:'Jordânia',ci:'Santa Clara'},{id:57,g:'J',r:2,dt:'22/06',tm:'14:00',h:'Argentina',a:'Áustria',ci:'Dallas'},{id:58,g:'J',r:2,dt:'23/06',tm:'00:00',h:'Jordânia',a:'Argélia',ci:'Santa Clara'},{id:59,g:'J',r:3,dt:'27/06',tm:'23:00',h:'Argélia',a:'Áustria',ci:'Kansas City'},{id:60,g:'J',r:3,dt:'27/06',tm:'23:00',h:'Jordânia',a:'Argentina',ci:'Dallas'},{id:61,g:'K',r:1,dt:'17/06',tm:'14:00',h:'Portugal',a:'RD do Congo',ci:'Houston'},{id:62,g:'K',r:1,dt:'17/06',tm:'23:00',h:'Uzbequistão',a:'Colômbia',ci:'Cidade do México'},{id:63,g:'K',r:2,dt:'23/06',tm:'14:00',h:'Portugal',a:'Uzbequistão',ci:'Houston'},{id:64,g:'K',r:2,dt:'23/06',tm:'23:00',h:'Colômbia',a:'RD do Congo',ci:'Guadalajara'},{id:65,g:'K',r:3,dt:'27/06',tm:'20:30',h:'Colômbia',a:'Portugal',ci:'Cidade do México'},{id:66,g:'K',r:3,dt:'27/06',tm:'20:30',h:'RD do Congo',a:'Uzbequistão',ci:'Guadalajara'},{id:67,g:'L',r:1,dt:'17/06',tm:'17:00',h:'Inglaterra',a:'Croácia',ci:'Dallas'},{id:68,g:'L',r:1,dt:'17/06',tm:'20:00',h:'Gana',a:'Panamá',ci:'Toronto'},{id:69,g:'L',r:2,dt:'23/06',tm:'17:00',h:'Inglaterra',a:'Gana',ci:'Boston'},{id:70,g:'L',r:2,dt:'23/06',tm:'20:00',h:'Panamá',a:'Croácia',ci:'Toronto'},{id:71,g:'L',r:3,dt:'27/06',tm:'18:00',h:'Panamá',a:'Inglaterra',ci:'Nova York / NJ'},{id:72,g:'L',r:3,dt:'27/06',tm:'19:00',h:'Croácia',a:'Gana',ci:'Filadélfia'}];
 
 // ══════════════════════════════════════════════════════
-//  🏆  FASE ELIMINATÓRIA — CONFRONTOS DINÂMICOS
-//  ⚠️  SÓ ADICIONA, NÃO MUDA NADA DO QUE JÁ EXISTE
+//  🏆  FASE ELIMINATÓRIA COMPLETA — DADOS REAIS
+//  Baseado em: ESPN, Yahoo Sports, MLSSoccer.com, O TEMPO
 // ══════════════════════════════════════════════════════
 
-// Função auxiliar para calcular classificação de um grupo (usando MATCHES original)
-function calcGroupRanking(g) {
-  const st={};
-  GROUPS[g].forEach(t=>{st[t]={pts:0,j:0,v:0,e:0,d:0,gp:0,gc:0};});
-  MATCHES.filter(m=>m.g===g).forEach(m=>{
-    const r=getRes(m.id);
-    if(!r)return;
-    const h=r.h,a=r.a;
-    st[m.h].j++;st[m.a].j++;
-    st[m.h].gp+=h;st[m.h].gc+=a;
-    st[m.a].gp+=a;st[m.a].gc+=h;
-    if(h>a){st[m.h].v++;st[m.h].pts+=3;st[m.a].d++;}
-    else if(a>h){st[m.a].v++;st[m.a].pts+=3;st[m.h].d++;}
-    else{st[m.h].e++;st[m.a].e++;st[m.h].pts++;st[m.a].pts++;}
-  });
-  return Object.entries(st).map(([t,s])=>({t,...s,sg:s.gp-s.gc}))
-    .sort((a,b)=>b.pts-a.pts||(b.sg-a.sg)||b.gp-a.gp||a.t.localeCompare(b.t));
+// 16 AVOS DE FINAL — confrontos reais [citation:1][citation:8]
+const ROUND32 = [
+  {id:73, dt:'28/06', tm:'16:00', h:'África do Sul', a:'Canadá', ci:'SoFi Stadium (Los Angeles)', fase:'16avos', ordem:1},
+  {id:74, dt:'29/06', tm:'14:00', h:'Brasil', a:'Japão', ci:'NRG Stadium (Houston)', fase:'16avos', ordem:2},
+  {id:75, dt:'29/06', tm:'17:30', h:'Alemanha', a:'Paraguai', ci:'Gillette Stadium (Boston)', fase:'16avos', ordem:3},
+  {id:76, dt:'29/06', tm:'22:00', h:'Holanda', a:'Marrocos', ci:'Estádio BBVA (Monterrey)', fase:'16avos', ordem:4},
+  {id:77, dt:'30/06', tm:'14:00', h:'Costa do Marfim', a:'Noruega', ci:'AT&T Stadium (Dallas)', fase:'16avos', ordem:5},
+  {id:78, dt:'30/06', tm:'18:00', h:'França', a:'Suécia', ci:'MetLife Stadium (Nova Jersey)', fase:'16avos', ordem:6},
+  {id:79, dt:'30/06', tm:'22:00', h:'México', a:'Equador', ci:'Estádio Azteca (Cidade do México)', fase:'16avos', ordem:7},
+  {id:80, dt:'01/07', tm:'13:00', h:'Inglaterra', a:'RD do Congo', ci:'Mercedes-Benz Stadium (Atlanta)', fase:'16avos', ordem:8},
+  {id:81, dt:'01/07', tm:'17:00', h:'Bélgica', a:'Senegal', ci:'Lumen Field (Seattle)', fase:'16avos', ordem:9},
+  {id:82, dt:'01/07', tm:'21:00', h:'Estados Unidos', a:'Bósnia e Herzegovina', ci:'Levi\'s Stadium (Santa Clara)', fase:'16avos', ordem:10},
+  {id:83, dt:'02/07', tm:'16:00', h:'Espanha', a:'Áustria', ci:'SoFi Stadium (Los Angeles)', fase:'16avos', ordem:11},
+  {id:84, dt:'02/07', tm:'20:00', h:'Portugal', a:'Croácia', ci:'BMO Field (Toronto)', fase:'16avos', ordem:12},
+  {id:85, dt:'03/07', tm:'00:00', h:'Suíça', a:'Argélia', ci:'BC Place (Vancouver)', fase:'16avos', ordem:13},
+  {id:86, dt:'03/07', tm:'15:00', h:'Austrália', a:'Egito', ci:'AT&T Stadium (Dallas)', fase:'16avos', ordem:14},
+  {id:87, dt:'03/07', tm:'19:00', h:'Argentina', a:'Cabo Verde', ci:'Hard Rock Stadium (Miami)', fase:'16avos', ordem:15},
+  {id:88, dt:'03/07', tm:'22:30', h:'Colômbia', a:'Gana', ci:'Arrowhead Stadium (Kansas City)', fase:'16avos', ordem:16}
+];
+
+// OITAVAS DE FINAL — confrontos baseados nos vencedores dos 16 avos [citation:6]
+const ROUND16 = [
+  {id:89, dt:'04/07', tm:'14:00', h:'V73', a:'V75', ci:'NRG Stadium (Houston)', fase:'oitavas', ordem:1},
+  {id:90, dt:'04/07', tm:'18:00', h:'V74', a:'V77', ci:'Lincoln Financial Field (Filadélfia)', fase:'oitavas', ordem:2},
+  {id:91, dt:'05/07', tm:'17:00', h:'V76', a:'V78', ci:'MetLife Stadium (Nova Jersey)', fase:'oitavas', ordem:3},
+  {id:92, dt:'05/07', tm:'21:00', h:'V79', a:'V80', ci:'Estádio Azteca (Cidade do México)', fase:'oitavas', ordem:4},
+  {id:93, dt:'06/07', tm:'16:00', h:'V83', a:'V84', ci:'AT&T Stadium (Dallas)', fase:'oitavas', ordem:5},
+  {id:94, dt:'06/07', tm:'21:00', h:'V81', a:'V82', ci:'Lumen Field (Seattle)', fase:'oitavas', ordem:6},
+  {id:95, dt:'07/07', tm:'13:00', h:'V86', a:'V88', ci:'Mercedes-Benz Stadium (Atlanta)', fase:'oitavas', ordem:7},
+  {id:96, dt:'07/07', tm:'17:00', h:'V85', a:'V87', ci:'BC Place (Vancouver)', fase:'oitavas', ordem:8}
+];
+
+// QUARTAS DE FINAL [citation:6]
+const QUARTERS = [
+  {id:97, dt:'09/07', tm:'17:00', h:'V89', a:'V90', ci:'Gillette Stadium (Boston)', fase:'quartas', ordem:1},
+  {id:98, dt:'10/07', tm:'16:00', h:'V93', a:'V94', ci:'SoFi Stadium (Los Angeles)', fase:'quartas', ordem:2},
+  {id:99, dt:'11/07', tm:'18:00', h:'V91', a:'V92', ci:'Hard Rock Stadium (Miami)', fase:'quartas', ordem:3},
+  {id:100, dt:'11/07', tm:'22:00', h:'V95', a:'V96', ci:'Arrowhead Stadium (Kansas City)', fase:'quartas', ordem:4}
+];
+
+// SEMIFINAIS [citation:6]
+const SEMIS = [
+  {id:101, dt:'14/07', tm:'16:00', h:'V97', a:'V98', ci:'AT&T Stadium (Dallas)', fase:'semis', ordem:1},
+  {id:102, dt:'15/07', tm:'16:00', h:'V99', a:'V100', ci:'Mercedes-Benz Stadium (Atlanta)', fase:'semis', ordem:2}
+];
+
+// DISPUTA DE 3º LUGAR E FINAL [citation:6]
+const FINALS = [
+  {id:103, dt:'18/07', tm:'18:00', h:'P101', a:'P102', ci:'Hard Rock Stadium (Miami)', fase:'terceiro', ordem:1},
+  {id:104, dt:'19/07', tm:'16:00', h:'V101', a:'V102', ci:'MetLife Stadium (Nova Jersey)', fase:'final', ordem:1}
+];
+
+// ══════════════════════════════════════════════════════
+//  🧠  RESOLVEDOR DE CONFRONTOS — substitui placeholders
+// ══════════════════════════════════════════════════════
+
+// Mapeia vencedor de cada jogo baseado nos resultados
+function getWinner(matchId) {
+  const res = getRes(matchId);
+  if (!res) return null;
+  // Encontra o jogo para saber quem é casa e visitante
+  const all = getAllMatches();
+  const match = all.find(m => m.id === matchId);
+  if (!match) return null;
+  if (res.h > res.a) return match.h;
+  if (res.a > res.h) return match.a;
+  return null; // empate -> pênaltis (não temos resultado de pênaltis ainda)
 }
 
-function getBestThirdPlaces() {
-  const all=[];
-  Object.keys(GROUPS).forEach(g=>{
-    const r=calcGroupRanking(g);
-    r.forEach((team,i)=>{
-      all.push({...team,group:g,pos:i+1});
-    });
-  });
-  return all.filter(t=>t.pos===3).sort((a,b)=>b.pts-a.pts||(b.sg-a.sg)||b.gp-a.gp);
-}
-
-// Gera confrontos da fase eliminatória — retorna array de jogos ou vazio
-function generateKnockoutMatches() {
-  const allRankings=[];
-  Object.keys(GROUPS).forEach(g=>{
-    const r=calcGroupRanking(g);
-    r.forEach((team,i)=>{
-      allRankings.push({...team,group:g,pos:i+1});
-    });
-  });
+// Resolve um jogo que tem placeholders (ex: V73, V75, P101)
+function resolveMatch(match) {
+  const h = match.h;
+  const a = match.a;
   
-  const firsts=allRankings.filter(t=>t.pos===1).sort((a,b)=>a.group.localeCompare(b.group));
-  const seconds=allRankings.filter(t=>t.pos===2).sort((a,b)=>a.group.localeCompare(b.group));
-  const bestThirds=getBestThirdPlaces().slice(0,8);
-
-  // Mapa de times por grupo
-  const groupMap={};
-  Object.keys(GROUPS).forEach(g=>{
-    GROUPS[g].forEach(t=>{groupMap[t]=g;});
-  });
-
-  // Função para pegar time por referência (ex: "1A", "2B", "3C")
-  function getTeamByRef(ref) {
-    const pos=parseInt(ref[0]);
-    const g=ref[1];
-    const ranking=calcGroupRanking(g);
-    if(ranking.length>=pos) return ranking[pos-1].t;
-    if(pos===3){
-      const thirds=getBestThirdPlaces();
-      const idx=thirds.findIndex(t=>t.group===g);
-      if(idx!==-1 && idx<8) return thirds[idx].t;
+  // Se for placeholder Vxx, pega o vencedor do jogo xx
+  const hResolved = h.startsWith('V') ? getWinner(parseInt(h.substring(1))) : h;
+  const aResolved = a.startsWith('V') ? getWinner(parseInt(a.substring(1))) : a;
+  
+  // Para final: P101 = perdedor da semi 101
+  if (h === 'P101') {
+    const semi101 = getAllMatches().find(m => m.id === 101);
+    if (semi101) {
+      const res101 = getRes(101);
+      if (res101) {
+        // perdedor da semi 101
+        const winner101 = getWinner(101);
+        if (winner101 === semi101.h) return semi101.a;
+        if (winner101 === semi101.a) return semi101.h;
+      }
     }
     return null;
   }
+  if (a === 'P102') {
+    const semi102 = getAllMatches().find(m => m.id === 102);
+    if (semi102) {
+      const res102 = getRes(102);
+      if (res102) {
+        const winner102 = getWinner(102);
+        if (winner102 === semi102.h) return semi102.a;
+        if (winner102 === semi102.a) return semi102.h;
+      }
+    }
+    return null;
+  }
+  
+  // Para final: V101 e V102 = vencedores das semis
+  if (h === 'V101') return getWinner(101);
+  if (a === 'V102') return getWinner(102);
+  
+  return {h: hResolved, a: aResolved};
+}
 
-  // Chaveamento dos 16 avos
-  const bracket16 = [
-    {h:'1A', a:'3B'}, {h:'1B', a:'3A'}, {h:'1C', a:'3D'}, {h:'1D', a:'3C'},
-    {h:'1E', a:'3F'}, {h:'1F', a:'3E'}, {h:'1G', a:'3H'}, {h:'1H', a:'3G'},
-    {h:'1I', a:'3J'}, {h:'1J', a:'3I'}, {h:'1K', a:'3L'}, {h:'1L', a:'3K'},
-    {h:'2A', a:'2B'}, {h:'2C', a:'2D'}, {h:'2E', a:'2F'}, {h:'2G', a:'2H'},
-    {h:'2I', a:'2J'}, {h:'2K', a:'2L'}
-  ];
-
-  const matches=[];
-  let mid=73;
-
-  bracket16.forEach((b,idx)=>{
-    const home=getTeamByRef(b.h);
-    const away=getTeamByRef(b.a);
-    if(home && away && home!==away){
-      const dateOffset = Math.floor(idx / 4);
-      matches.push({
-        id: mid++,
-        fase: '16avos',
-        dt: ['30/06','01/07','02/07','03/07'][dateOffset] || '30/06',
-        tm: `${14 + (idx % 4) * 2}:00`,
-        h: home,
-        a: away,
-        ci: 'Estádio Eliminatório',
-        ordem: idx + 1,
-        g: null,
-        r: null
-      });
+// Gera TODOS os jogos da fase eliminatória resolvidos
+function generateKnockoutMatches() {
+  const allKnockout = [...ROUND32, ...ROUND16, ...QUARTERS, ...SEMIS, ...FINALS];
+  const resolved = [];
+  
+  allKnockout.forEach(m => {
+    // Se for placeholder, tenta resolver
+    if (m.h.startsWith('V') || m.a.startsWith('V') || m.h === 'P101' || m.a === 'P102' || m.h === 'V101' || m.a === 'V102') {
+      const resolvedMatch = resolveMatch(m);
+      if (resolvedMatch && resolvedMatch.h && resolvedMatch.a) {
+        resolved.push({
+          ...m,
+          h: resolvedMatch.h,
+          a: resolvedMatch.a,
+          _resolved: true
+        });
+      } else {
+        // Não resolveu ainda, mantém placeholder mas não exibe
+        // resolved.push({...m, _resolved: false});
+      }
+    } else {
+      resolved.push({...m, _resolved: true});
     }
   });
-
-  return matches;
+  
+  return resolved;
 }
 
 // ══════════════════════════════════════════════════════
@@ -526,7 +567,7 @@ async function syncFromSupabase(){
   if(!supa){setSyncStatus('','Sem BD');return;}
   try{
     setSyncStatus('sv','Conectando...');
-    const{data,error}=await supa.from('partidas').select('id,placar_casa,placar_visitante').lte('id',72);
+    const{data,error}=await supa.from('partidas').select('id,placar_casa,placar_visitante');
     if(error)throw error;
     (data||[]).forEach(r=>{if(r.placar_casa!==null&&r.placar_visitante!==null)ST.results[r.id]={h:r.placar_casa,a:r.placar_visitante};});
     save();setSyncStatus('ok','Supabase ✓');
@@ -579,10 +620,11 @@ function calcSt(g){
 
 // Obtém todos os jogos (fase de grupos + eliminatórias geradas)
 function getAllMatches() {
+  // Gera os jogos da fase eliminatória com base nos resultados atuais
   const ko = generateKnockoutMatches();
   // Filtra apenas jogos que têm times válidos (não duplicados)
   const existingIds = new Set(MATCHES.map(m=>m.id));
-  const newMatches = ko.filter(m => !existingIds.has(m.id));
+  const newMatches = ko.filter(m => !existingIds.has(m.id) && m._resolved !== false);
   return [...MATCHES, ...newMatches];
 }
 
@@ -608,21 +650,19 @@ function renderTabela(){
   const koMatches = allMatches.filter(m => m.fase);
   if (koMatches.length > 0) {
     html += `<div class="sec-h" style="margin-top:28px">🏆 FASE ELIMINATÓRIA</div><div class="gg">`;
-    // Agrupa por fase
-    const fases = {};
-    koMatches.forEach(m => {
-      if (!fases[m.fase]) fases[m.fase] = [];
-      fases[m.fase].push(m);
-    });
+    // Agrupa por fase na ordem correta
+    const faseOrder = ['16avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
     const faseLabels = {
-      '16avos': '16 AVOS DE FINAL',
-      'oitavas': 'OITAVAS DE FINAL',
-      'quartas': 'QUARTAS DE FINAL',
-      'semis': 'SEMIFINAIS',
-      'final': 'FINAL'
+      '16avos': '16 AVOS DE FINAL (28 Jun - 3 Jul)',
+      'oitavas': 'OITAVAS DE FINAL (4-7 Jul)',
+      'quartas': 'QUARTAS DE FINAL (9-11 Jul)',
+      'semis': 'SEMIFINAIS (14-15 Jul)',
+      'terceiro': 'DISPUTA DE 3º LUGAR (18 Jul)',
+      'final': 'GRANDE FINAL (19 Jul)'
     };
-    Object.keys(fases).forEach(fase => {
-      const ms = fases[fase].sort((a,b)=>a.ordem-b.ordem);
+    faseOrder.forEach(fase => {
+      const ms = koMatches.filter(m => m.fase === fase).sort((a,b)=>a.ordem-b.ordem);
+      if (ms.length === 0) return;
       let matchRows = `<div class="round-lbl">${faseLabels[fase]||fase}</div>`;
       ms.forEach(m => {
         const res=getRes(m.id);
@@ -673,11 +713,18 @@ function renderPalpites(){
   const koMatches = allMatches.filter(m => m.fase);
   if (koMatches.length > 0) {
     html += `<div class="sec-h" style="margin-top:28px">🏆 FASE ELIMINATÓRIA</div><div class="gg">`;
-    const fases = {};
-    koMatches.forEach(m => { if (!fases[m.fase]) fases[m.fase] = []; fases[m.fase].push(m); });
-    const faseLabels = { '16avos':'16 AVOS DE FINAL', 'oitavas':'OITAVAS DE FINAL', 'quartas':'QUARTAS DE FINAL', 'semis':'SEMIFINAIS', 'final':'FINAL' };
-    Object.keys(fases).forEach(fase => {
-      const ms = fases[fase].sort((a,b)=>a.ordem-b.ordem);
+    const faseOrder = ['16avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
+    const faseLabels = {
+      '16avos': '16 AVOS DE FINAL (28 Jun - 3 Jul)',
+      'oitavas': 'OITAVAS DE FINAL (4-7 Jul)',
+      'quartas': 'QUARTAS DE FINAL (9-11 Jul)',
+      'semis': 'SEMIFINAIS (14-15 Jul)',
+      'terceiro': 'DISPUTA DE 3º LUGAR (18 Jul)',
+      'final': 'GRANDE FINAL (19 Jul)'
+    };
+    faseOrder.forEach(fase => {
+      const ms = koMatches.filter(m => m.fase === fase).sort((a,b)=>a.ordem-b.ordem);
+      if (ms.length === 0) return;
       let rows = `<div class="round-lbl">${faseLabels[fase]||fase}</div>`;
       ms.forEach(m => {
         const pred=getPred(m.id), res=getRes(m.id), pp=calcPts(pred,res);
@@ -932,7 +979,7 @@ function closePartDetail(){const nc=Object.keys(_changed).length;if(nc>0&&!confi
 function getAllUsers(){const u=new Set();for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('c26_acc_'))u.add(k.replace('c26_acc_',''));}Object.keys(ST.preds).forEach(x=>{if(x)u.add(x);});if(ST.user)u.add(ST.user.name);return[...u].sort((a,b)=>a.localeCompare(b));}
 function deleteUser(n){if(!confirm(`Excluir "${n}"?`))return;localStorage.removeItem('c26_acc_'+n);if(ST.preds[n]){delete ST.preds[n];save();}if(supa)supa.from('palpites').delete().eq('apelido',n).then(()=>{}).catch(()=>{});if(ST.user&&ST.user.name===n){ST.user=null;save();updateAuthUI();}renderAdmin();renderRanking();toast(`🗑️ "${n}" removido`);}
 function resetPreds(n){if(!confirm(`Zerar palpites de "${n}"?`))return;if(ST.preds[n]){delete ST.preds[n];save();}if(supa)supa.from('palpites').delete().eq('apelido',n).then(()=>{}).catch(()=>{});renderAdmin();renderRanking();toast(`🔄 Palpites de "${n}" zerados`);}
-function resetAllResults(){if(!confirm('⚠️ Zerar TODOS os resultados?'))return;ST.results={};save();if(supa)supa.from('partidas').update({placar_casa:null,placar_visitante:null}).lte('id',72).then(()=>{}).catch(()=>{});refreshAllPanels();toast('🗑️ Resultados zerados');}
+function resetAllResults(){if(!confirm('⚠️ Zerar TODOS os resultados?'))return;ST.results={};save();if(supa)supa.from('partidas').update({placar_casa:null,placar_visitante:null}).then(()=>{}).catch(()=>{});refreshAllPanels();toast('🗑️ Resultados zerados');}
 function resetAndRefreshMatches(){refreshAllPanels();toast('🔄 Chaveamento atualizado');}
 async function renderAdmin(){
   const el=document.getElementById('panel-admin');
