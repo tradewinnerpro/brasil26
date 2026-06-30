@@ -274,50 +274,35 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
   .m-v{display:none}
 }
 @media(max-width:400px){.t-name{max-width:52px;font-size:.66rem}}
-/* ═══ MATA-MATA (KNOCKOUT) ═══ */
-.ko-round{margin-bottom:26px}
-.ko-round-ttl{font-family:var(--fh);font-size:1.3rem;letter-spacing:.07em;color:var(--gold);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,215,0,.22);display:flex;align-items:center;gap:8px}
-.ko-list{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.3)}
-.ko-row{display:grid;grid-template-columns:62px 1fr 92px 1fr;align-items:center;padding:9px 13px;gap:7px;border-bottom:1px solid rgba(255,255,255,.022);transition:background .15s}
-.ko-row:hover{background:rgba(255,255,255,.015)}
-.ko-row:last-child{border-bottom:none}
-.ko-row.brmatch{background:rgba(0,60,22,.18)}
-.ko-tbd-name{font-size:.64rem;color:var(--dim);font-style:italic;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:115px;display:inline-block}
-.ko-pen-wrap{display:flex;align-items:center;gap:3px;justify-content:center}
-.ko-pen-lbl{font-size:.5rem;color:var(--dim);font-weight:700;letter-spacing:.05em}
-.ko-pen-badge{font-size:.52rem;color:var(--gold);text-align:center;margin-top:1px}
-.pinp{width:28px;height:28px;background:rgba(0,0,0,.5);border:1.5px solid rgba(255,215,0,.4);border-radius:5px;color:var(--gold);font-family:var(--fh);font-size:.75rem;text-align:center;outline:none;-moz-appearance:textfield;touch-action:manipulation}
-.pinp::-webkit-outer-spin-button,.pinp::-webkit-inner-spin-button{-webkit-appearance:none}
-.pinp:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,215,0,.2)}
-.ko-flag-ph{display:inline-block;width:22px;height:15px;border-radius:2px;background:rgba(255,255,255,.06);flex-shrink:0}
-.ko-note{font-size:.66rem;color:var(--dim);background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.18);border-radius:8px;padding:8px 12px;margin-bottom:16px}
-/* ═══ BRACKET TREE (chaveamento visual) ═══ */
-.bk-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:20px 10px 26px;margin-bottom:24px;background:radial-gradient(ellipse 70% 55% at 50% 38%,rgba(255,215,0,.06),transparent 70%),var(--s1);border:1px solid var(--brd-y);border-radius:var(--r)}
-.bk-hint{display:none;text-align:center;font-size:.62rem;color:var(--dim);margin-bottom:10px;letter-spacing:.04em}
-.bk-stage{position:relative;display:flex;align-items:center;justify-content:center;width:max-content;margin:0 auto}
-.bk-half{position:relative;flex-shrink:0}
-.bk-center{position:relative;flex-shrink:0}
-.bk-box{position:absolute;background:rgba(0,0,0,.5);border:1px solid var(--brd-g);border-radius:7px;padding:3px 7px;display:flex;flex-direction:column;justify-content:center;gap:2px;overflow:hidden;box-sizing:border-box}
-.bk-box.bk-box-br{border-color:var(--gold);box-shadow:0 0 9px rgba(255,215,0,.32)}
-.bk-box.bk-box-final{border-width:2px;box-shadow:0 0 14px rgba(255,215,0,.42);background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(0,0,0,.55))}
-.bk-line{display:flex;align-items:center;gap:5px;font-size:.6rem;font-weight:700;white-space:nowrap;line-height:1.3}
-.bk-line.bk-win{color:var(--gl)}
-.bk-line.bk-lose{color:var(--dim);opacity:.62;text-decoration:line-through;text-decoration-color:rgba(255,255,255,.3)}
-.bk-tn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-.bk-tn.bk-tbdname{font-style:italic;color:var(--dim);font-weight:400}
-.bk-sc{font-family:var(--fh);font-size:.74rem;flex-shrink:0;min-width:13px;text-align:right}
-.bk-pen-note{position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-size:.46rem;color:var(--gold);white-space:nowrap;background:var(--s2);padding:0 5px;border-radius:5px;border:1px solid rgba(255,215,0,.25);z-index:2}
-.bk-ln-h{position:absolute;height:0;border-top:2px solid rgba(255,215,0,.5)}
-.bk-ln-v{position:absolute;width:0;border-left:2px solid rgba(255,215,0,.5)}
-.bk-trophy-ico{position:absolute;font-size:1.7rem;filter:drop-shadow(0 0 10px rgba(255,215,0,.55))}
-.bk-3rd-box{position:absolute;width:168px;font-size:.52rem;color:var(--dim);text-align:center;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:7px;padding:5px 8px;line-height:1.6;box-sizing:border-box}
-.bk-3rd-box strong{display:block;color:var(--muted);font-size:.56rem;margin-bottom:1px}
-.bk-flag-ph-sm{display:inline-block;width:16px;height:11px;border-radius:2px;background:rgba(255,255,255,.08);flex-shrink:0}
-@media(max-width:760px){.bk-hint{display:block}}
-@media(max-width:640px){
-  .ko-row{grid-template-columns:50px 1fr 82px 1fr;padding:7px 10px;gap:5px}
-  .ko-tbd-name{max-width:70px;font-size:.58rem}
-}
+
+/* ═══ BRACKET VISUAL ═══ */
+.bracket-wrap{overflow-x:auto;padding:24px 12px 32px;background:rgba(0,0,0,.3);border:1px solid var(--brd-g);border-radius:var(--r);margin-bottom:20px}
+.bracket-scroll{display:flex;justify-content:center;gap:16px;min-width:fit-content;padding:0 12px}
+.bracket-col{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.bracket-col-label{font-size:.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;text-align:center;margin-bottom:4px;font-weight:700}
+.bracket-col-label.final-label{color:var(--gold);font-size:.72rem}
+.bracket-match{background:rgba(10,20,14,.7);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:4px 8px;min-width:128px;width:100%;transition:all .25s}
+.bracket-match.br-match{border-color:var(--brd-g);background:rgba(0,60,22,.25)}
+.bracket-match.final-match{border-color:var(--gold);border-width:2px;background:rgba(255,215,0,.08)}
+.bracket-match .bm-line{display:flex;align-items:center;gap:4px;font-size:.7rem;font-weight:600;padding:1px 0;line-height:1.4}
+.bracket-match .bm-line .bm-flag{flex-shrink:0}
+.bracket-match .bm-line .bm-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bracket-match .bm-line .bm-name.tbd{color:var(--dim);font-style:italic;font-weight:400}
+.bracket-match .bm-line .bm-score{font-family:var(--fh);font-size:.82rem;min-width:18px;text-align:right;color:var(--dim)}
+.bracket-match .bm-line.win .bm-score{color:var(--gl)}
+.bracket-match .bm-line.lose .bm-score{color:var(--dim);opacity:.5}
+.bracket-match .bm-pens{font-size:.45rem;color:var(--gold);text-align:center;margin-top:-1px;padding-bottom:1px;letter-spacing:.04em}
+.bracket-match .bm-vs{font-size:.5rem;color:var(--dim);text-align:center;padding:2px 0;font-style:italic}
+.bracket-connector{width:12px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;position:relative}
+.bracket-connector .conn-line{width:2px;background:rgba(255,215,0,.25);flex:1;min-height:20px}
+.bracket-connector .conn-h{width:100%;height:2px;background:rgba(255,215,0,.25)}
+.bracket-connector .conn-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,215,0,.3);flex-shrink:0}
+.bracket-bottom{margin-top:4px;text-align:center;font-size:.55rem;color:var(--dim)}
+.bracket-bottom .bb-trophy{font-size:1.6rem;display:block;margin-bottom:-4px}
+.bracket-bottom .bb-line{font-size:.6rem;color:var(--muted)}
+.bracket-bottom .bb-3rd{font-size:.55rem;color:var(--dim);margin-top:4px;border-top:1px solid rgba(255,255,255,.05);padding-top:6px}
+@media(max-width:860px){.bracket-scroll{gap:10px}.bracket-match{min-width:100px;padding:3px 6px}.bracket-match .bm-line{font-size:.64rem}}
+@media(max-width:600px){.bracket-scroll{gap:6px}.bracket-match{min-width:82px;padding:2px 5px}.bracket-match .bm-line{font-size:.58rem}.bracket-match .bm-line .bm-score{font-size:.7rem;min-width:14px}.bracket-connector{width:8px}}
 </style>
 </head>
 <body>
@@ -450,7 +435,6 @@ const MATCHES=[{id:1,g:'A',r:1,dt:'11/06',tm:'16:00',h:'México',a:'África do S
 
 // ══════════════════════════════════════════════════════
 //  🏆  16 AVOS DE FINAL - CONFRONTOS CORRETOS
-//  Baseado nos dados oficiais da Copa 2026
 // ══════════════════════════════════════════════════════
 const ROUND32 = [
   {id:73, dt:'28/06', tm:'16:00', h:'África do Sul', a:'Canadá', ci:'SoFi Stadium (LA)', fase:'16avos', ordem:1},
@@ -472,7 +456,7 @@ const ROUND32 = [
 ];
 
 // ══════════════════════════════════════════════════════
-//  🏆  OITAVAS, QUARTAS, SEMIS E FINAL (GERADOS AUTOMATICAMENTE)
+//  🧠  FUNÇÕES DE CHAVEAMENTO
 // ══════════════════════════════════════════════════════
 
 function getWinner(matchId) {
@@ -483,7 +467,6 @@ function getWinner(matchId) {
   if (!match) return null;
   if (res.h > res.a) return match.h;
   if (res.a > res.h) return match.a;
-  // Se empatou e tem pênaltis, usa os pênaltis
   if (res.pen) {
     if (res.pen.h > res.pen.a) return match.h;
     if (res.pen.a > res.pen.h) return match.a;
@@ -743,6 +726,157 @@ function getMatchUTC(m){const[d,mo]=m.dt.split('/').map(Number);const[h,mn]=m.tm
 function matchStatus(m){const kick=getMatchUTC(m),lock=new Date(kick-5*60*1000),end=new Date(kick+115*60*1000),now=Date.now();if(now<lock)return{s:'open',ms:lock-now};if(now<end)return{s:'live',ms:end-now};return{s:'ended',ms:0};}
 function fmtCountdown(ms){const d=Math.floor(ms/86400000),h=Math.floor((ms%86400000)/3600000),m=Math.floor((ms%3600000)/60000);if(d>0)return`${d}d ${h}h`;if(h>0)return`${h}h ${m}min`;if(m>0)return`${m}min`;return'<1min';}
 
+// ══════════════════════════════════════════════════════
+//  🏆  BRACKET VISUAL - ESTILO CHAVEAMENTO
+// ══════════════════════════════════════════════════════
+
+function bracketLineHtml(team, score, isWin, isLose, isTbd) {
+  const flag = team && FC[team] ? fi(team, 16) : '<span class="bm-flag" style="display:inline-block;width:16px;height:11px;border-radius:2px;background:rgba(255,255,255,.06)"></span>';
+  const nameCls = isTbd ? 'bm-name tbd' : 'bm-name';
+  const lineCls = isWin ? 'bm-line win' : isLose ? 'bm-line lose' : 'bm-line';
+  const sc = score !== undefined && score !== null ? score : '';
+  return `<div class="${lineCls}"><span class="bm-flag">${flag}</span><span class="${nameCls}">${escH(team||'TBD')}</span><span class="bm-score">${sc}</span></div>`;
+}
+
+function bracketMatchHtml(m, isFinal) {
+  if (!m) return '';
+  const res = getRes(m.id);
+  const isBr = (m.h==='Brasil'||m.a==='Brasil');
+  const cls = isFinal ? 'bracket-match final-match' : isBr ? 'bracket-match br-match' : 'bracket-match';
+  
+  const hScore = res ? res.h : '';
+  const aScore = res ? res.a : '';
+  const hWin = res ? (res.h > res.a || (res.h === res.a && res.pen && res.pen.h > res.pen.a)) : false;
+  const aWin = res ? (res.a > res.h || (res.h === res.a && res.pen && res.pen.a > res.pen.h)) : false;
+  const hTbd = !m.h || !FC[m.h];
+  const aTbd = !m.a || !FC[m.a];
+  const hasScore = res !== null;
+  
+  let penHtml = '';
+  if (res && res.pen) {
+    penHtml = `<div class="bm-pens">pênaltis: ${res.pen.h} - ${res.pen.a}</div>`;
+  }
+  
+  let vsHtml = '';
+  if (!hasScore && (hTbd || aTbd)) {
+    vsHtml = `<div class="bm-vs">vs</div>`;
+  }
+  
+  return `<div class="${cls}">
+    ${bracketLineHtml(m.h, hScore, hWin, !hWin && hasScore, hTbd)}
+    ${bracketLineHtml(m.a, aScore, aWin, !aWin && hasScore, aTbd)}
+    ${penHtml}
+    ${vsHtml}
+  </div>`;
+}
+
+function renderBracket() {
+  const allMatches = getAllMatches();
+  const koMatches = allMatches.filter(m => m.fase);
+  
+  // Organizar por fase
+  const faseOrder = ['16avos', 'oitavas', 'quartas', 'semis', 'final'];
+  const faseLabels = {
+    '16avos': '16 AVOS',
+    'oitavas': 'OITAVAS',
+    'quartas': 'QUARTAS',
+    'semis': 'SEMIS',
+    'final': 'FINAL'
+  };
+  
+  // Agrupar jogos por fase
+  const grouped = {};
+  faseOrder.forEach(f => { grouped[f] = koMatches.filter(m => m.fase === f).sort((a,b)=>a.ordem-b.ordem); });
+  
+  // Construir HTML do bracket
+  let html = `<div class="bracket-wrap"><div class="bracket-scroll">`;
+  
+  // Para cada fase, criar uma coluna
+  faseOrder.forEach(fase => {
+    const matches = grouped[fase] || [];
+    const isFinal = fase === 'final';
+    html += `<div class="bracket-col">`;
+    html += `<div class="bracket-col-label ${isFinal?'final-label':''}">${faseLabels[fase]}</div>`;
+    matches.forEach(m => {
+      html += bracketMatchHtml(m, isFinal);
+    });
+    if (matches.length === 0) {
+      html += `<div class="bracket-match" style="opacity:0.4;min-height:40px;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--dim)">aguardando</div>`;
+    }
+    // Conectores entre colunas
+    if (fase !== 'final') {
+      const nextFase = faseOrder[faseOrder.indexOf(fase)+1];
+      if (nextFase && grouped[nextFase] && grouped[nextFase].length > 0) {
+        const count = Math.max(matches.length, grouped[nextFase].length);
+        html += `<div class="bracket-connector" style="height:${count * 44}px">`;
+        // Linhas de conexão
+        for (let i = 0; i < count; i++) {
+          if (i > 0) html += `<div class="conn-dot"></div>`;
+          html += `<div class="conn-line"></div>`;
+        }
+        html += `</div>`;
+      }
+    }
+    html += `</div>`;
+  });
+  
+  // 3º Lugar
+  const terceiro = koMatches.filter(m => m.fase === 'terceiro');
+  if (terceiro.length > 0) {
+    html += `<div class="bracket-col" style="justify-content:flex-end;">`;
+    html += `<div class="bracket-col-label" style="color:var(--dim)">3º LUGAR</div>`;
+    terceiro.forEach(m => {
+      html += bracketMatchHtml(m, false);
+    });
+    html += `</div>`;
+  }
+  
+  html += `</div>`;
+  
+  // Legenda inferior
+  html += `<div class="bracket-bottom">
+    <span class="bb-trophy">🏆</span>
+    <div class="bb-line">VENCEDOR</div>
+    <div class="bb-3rd">🥉 Disputa do 3º lugar: ${terceiro.length > 0 ? terceiro[0].dt : '18/07'} — ${terceiro.length > 0 ? terceiro[0].ci : 'Miami'}</div>
+  </div></div>`;
+  
+  return html;
+}
+
+function renderMataMata(){
+  const el=document.getElementById('panel-mata');
+  let html=`<div class="sec-h">🏆 CHAVEAMENTO — MATA-MATA</div>`;
+  html += renderBracket();
+  
+  // Detalhes por rodada (com edição para admin)
+  const allMatches = getAllMatches();
+  const koMatches = allMatches.filter(m => m.fase);
+  if (koMatches.length > 0) {
+    html += `<div class="sec-h" style="font-size:1.2rem;margin-top:20px">📋 DETALHES POR RODADA</div>`;
+    const faseOrder = ['16avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
+    const faseLabels = {
+      '16avos': '16 AVOS DE FINAL (28 Jun - 3 Jul)',
+      'oitavas': 'OITAVAS DE FINAL (4-7 Jul)',
+      'quartas': 'QUARTAS DE FINAL (9-11 Jul)',
+      'semis': 'SEMIFINAIS (14-15 Jul)',
+      'terceiro': 'DISPUTA DE 3º LUGAR (18 Jul)',
+      'final': 'GRANDE FINAL (19 Jul)'
+    };
+    faseOrder.forEach(fase => {
+      const ms = koMatches.filter(m => m.fase === fase).sort((a,b)=>a.ordem-b.ordem);
+      if (ms.length === 0) return;
+      html += `<div class="ko-round"><div class="ko-round-ttl">${faseLabels[fase]||fase}</div><div class="ko-list">${ms.map(koRowHtml).join('')}</div></div>`;
+    });
+  } else {
+    html += `<div class="ko-note">⏳ Aguardando definição dos classificados...</div>`;
+  }
+  
+  el.innerHTML=html;
+  attachKoAdminListeners();
+  clearTimeout(window._mataTimer);
+  window._mataTimer=setTimeout(()=>{if(document.querySelector('#panel-mata.on'))renderMataMata();},30000);
+}
+
 function koRowHtml(m){
   const res=getRes(m.id);
   const isBr=m.h==='Brasil'||m.a==='Brasil';
@@ -764,36 +898,6 @@ function koRowHtml(m){
     sc=`<div class="sdsp novs">vs</div>`;
   }
   return `<div class="ko-row${isBr?' brmatch':''}"><div class="m-dt"><div class="m-d">${m.dt}</div><div class="m-t">${m.tm}</div><div class="m-v">📍 ${m.ci}</div></div><div class="m-home">${fi(m.h,22)}<span class="t-name">${m.h}</span></div>${sc}<div class="m-away"><span class="t-name">${m.a}</span>${fi(m.a,22)}</div></div>`;
-}
-
-function renderMataMata(){
-  const el=document.getElementById('panel-mata');
-  const allMatches = getAllMatches();
-  let html=`<div class="sec-h">🏆 MATA-MATA — RUMO À FINAL</div>`;
-  const koMatches = allMatches.filter(m => m.fase);
-  if (koMatches.length > 0) {
-    html += `<div class="sec-h" style="font-size:1.4rem;margin-top:6px">📋 DETALHES E EDIÇÃO POR RODADA</div>`;
-    const faseOrder = ['16avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
-    const faseLabels = {
-      '16avos': '16 AVOS DE FINAL (28 Jun - 3 Jul)',
-      'oitavas': 'OITAVAS DE FINAL (4-7 Jul)',
-      'quartas': 'QUARTAS DE FINAL (9-11 Jul)',
-      'semis': 'SEMIFINAIS (14-15 Jul)',
-      'terceiro': 'DISPUTA DE 3º LUGAR (18 Jul)',
-      'final': 'GRANDE FINAL (19 Jul)'
-    };
-    faseOrder.forEach(fase => {
-      const ms = koMatches.filter(m => m.fase === fase).sort((a,b)=>a.ordem-b.ordem);
-      if (ms.length === 0) return;
-      html += `<div class="ko-round"><div class="ko-round-ttl">${faseLabels[fase]||fase}</div><div class="ko-list">${ms.map(koRowHtml).join('')}</div></div>`;
-    });
-  } else {
-    html += `<div class="ko-note">⏳ Aguardando definição dos classificados...</div>`;
-  }
-  el.innerHTML=html;
-  attachKoAdminListeners();
-  clearTimeout(window._mataTimer);
-  window._mataTimer=setTimeout(()=>{if(document.querySelector('#panel-mata.on'))renderMataMata();},30000);
 }
 
 function attachKoAdminListeners(){
