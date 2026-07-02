@@ -286,14 +286,17 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
 .symbracket-svg .bk-col-lbl{fill:var(--dim);font-family:var(--fb);font-size:14px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase}
 .symbracket-svg .bk-trophy-emoji{font-size:50px}
 .symbracket-svg .bk-champ-tbd{fill:var(--dim);font-family:var(--fb);font-size:12px;letter-spacing:2.5px}
-.lf-row{display:flex;align-items:center;gap:5px;font-family:var(--fb);font-size:13px;font-weight:700;color:var(--muted);height:100%;white-space:nowrap}
-.lf-flag{width:24px;height:24px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1.5px solid var(--gold);box-shadow:0 0 5px rgba(255,215,0,.35);display:flex;align-items:center;justify-content:center;background:#0a0a0a}
+.lf-col{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--fb);height:100%}
+.lf-flag{width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--gold);box-shadow:0 1px 6px rgba(0,0,0,.6),0 0 6px rgba(255,215,0,.3);display:flex;align-items:center;justify-content:center;background:#0a0a0a}
+.lf-flag.win{border-color:var(--gl);box-shadow:0 1px 6px rgba(0,0,0,.6),0 0 9px rgba(0,238,90,.55)}
+.lf-flag.lose{opacity:.5;filter:grayscale(55%)}
 .lf-flag .fi{width:100%!important;height:100%!important;background-size:cover!important;border-radius:0!important}
 .lf-flag-empty{width:100%;height:100%;background:rgba(255,255,255,.05)}
-.lf-name{overflow:hidden;text-overflow:ellipsis;max-width:118px}
+.lf-name-line{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;max-width:108px;line-height:1.1}
+.lf-name{overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em}
 .lf-name.win{color:var(--gl);font-weight:800}
-.lf-name.lose{color:var(--dim);font-weight:500;opacity:.55}
-.lf-score{font-family:var(--fh);font-size:15px;color:var(--gold);min-width:13px;text-align:center}
+.lf-name.lose{color:var(--dim);font-weight:500;opacity:.6}
+.lf-score{font-family:var(--fh);font-size:14px;color:var(--gold);min-width:12px;text-align:center;line-height:1}
 .sb-card{background:rgba(10,20,14,.94);border:1.5px solid var(--brd-g);border-radius:8px;padding:3px 8px;display:flex;flex-direction:column;justify-content:center;gap:2px;height:100%;box-shadow:0 3px 12px rgba(0,0,0,.55)}
 .sb-row{display:flex;align-items:center;gap:6px;font-family:var(--fb);font-size:12.5px;font-weight:700;color:var(--muted)}
 .sb-flag{width:20px;height:20px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1px solid rgba(255,215,0,.5);display:flex;align-items:center;justify-content:center;background:#0a0a0a}
@@ -793,17 +796,16 @@ function buildSymBracket(){
   svgLines += `<line x1="${xsL[4]}" y1="${finalY}" x2="${finalX-92}" y2="${finalY}" class="bkl gf"/>`;
   svgLines += `<line x1="${xsR[4]}" y1="${finalY}" x2="${finalX+92}" y2="${finalY}" class="bkl gf"/>`;
 
-  // ── linhas dos times (16avos) ──
+  // ── linhas dos times (16avos) — bandeira alinhada na linha, nome embaixo ──
   let leaves='';
-  function leafRow(x,y,team,score,isWin,isLose,side){
+  function leafRow(x,y,team,score,isWin,isLose){
+    const flagCls = 'lf-flag'+(isWin?' win':(isLose?' lose':''));
     const flag = team && FC[team] ? `<span class="fi fi-${FC[team]}"></span>` : '<span class="lf-flag-empty"></span>';
-    const cls='lf-name'+(isWin?' win':(isLose?' lose':''));
+    const nameCls = 'lf-name'+(isWin?' win':(isLose?' lose':''));
     const sc = (score!==null&&score!==undefined) ? `<span class="lf-score">${score}</span>` : '';
-    const w=196,h=32;
-    let fx, justify, inner;
-    if(side==='L'){ fx=x-w; justify='flex-end'; inner=`<span class="${cls}">${escH(team||'TBD')}</span>${sc}<span class="lf-flag">${flag}</span>`; }
-    else { fx=x; justify='flex-start'; inner=`<span class="lf-flag">${flag}</span>${sc}<span class="${cls}">${escH(team||'TBD')}</span>`; }
-    return `<foreignObject x="${fx}" y="${y-h/2}" width="${w}" height="${h}"><div xmlns="http://www.w3.org/1999/xhtml" class="lf-row" style="justify-content:${justify}">${inner}</div></foreignObject>`;
+    const w=112, flagH=32, gap=4, textH=15, h=flagH+gap+textH;
+    const fx=x-w/2, fy=y-flagH/2;
+    return `<foreignObject x="${fx}" y="${fy}" width="${w}" height="${h}"><div xmlns="http://www.w3.org/1999/xhtml" class="lf-col"><span class="${flagCls}">${flag}</span><span class="lf-name-line"><span class="${nameCls}">${escH(team||'TBD')}</span>${sc}</span></div></foreignObject>`;
   }
   [[BRACKET_LEFT_R32,'L'],[BRACKET_RIGHT_R32,'R']].forEach(([ids,side])=>{
     const xs = side==='L'?xsL:xsR;
@@ -816,7 +818,7 @@ function buildSymBracket(){
         const score= res ? (role==='h'?res.h:res.a) : null;
         const isWin = !!(win && team===win);
         const isLose = !!(res && win && team!==win);
-        leaves += leafRow(xs[0],y,team,score,isWin,isLose,side);
+        leaves += leafRow(xs[0],y,team,score,isWin,isLose);
       });
     });
   });
