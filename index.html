@@ -303,6 +303,26 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
 .bracket-bottom .bb-3rd{font-size:.55rem;color:var(--dim);margin-top:4px;border-top:1px solid rgba(255,255,255,.05);padding-top:6px}
 @media(max-width:860px){.bracket-scroll{gap:10px}.bracket-match{min-width:100px;padding:3px 6px}.bracket-match .bm-line{font-size:.64rem}}
 @media(max-width:600px){.bracket-scroll{gap:6px}.bracket-match{min-width:82px;padding:2px 5px}.bracket-match .bm-line{font-size:.58rem}.bracket-match .bm-line .bm-score{font-size:.7rem;min-width:14px}.bracket-connector{width:8px}}
+
+/* ═══ MATA-MATA · DETALHES POR RODADA (antes ausente = layout quebrado) ═══ */
+.ko-round{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.ko-round-ttl{padding:11px 15px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);font-family:var(--fh);font-size:1.15rem;letter-spacing:.07em;color:var(--gold)}
+.ko-list{display:flex;flex-direction:column}
+.ko-row{display:grid;grid-template-columns:62px 1fr 108px 1fr;align-items:center;padding:9px 13px;gap:7px;border-bottom:1px solid rgba(255,255,255,.022);transition:background .15s}
+.ko-row:hover{background:rgba(255,255,255,.015)}
+.ko-row:last-child{border-bottom:none}
+.ko-row.brmatch{background:rgba(0,60,22,.18)}
+.ko-pen-wrap{display:flex;align-items:center;gap:4px;justify-content:center;margin-top:2px}
+.ko-pen-lbl{font-size:.52rem;color:var(--gold);font-weight:800;letter-spacing:.06em;margin-right:1px}
+.pinp{width:26px;height:24px;background:rgba(0,0,0,.5);border:1.5px solid var(--brd-y);border-radius:5px;color:var(--gold);font-family:var(--fh);font-size:.78rem;text-align:center;outline:none;-moz-appearance:textfield;touch-action:manipulation}
+.pinp::-webkit-outer-spin-button,.pinp::-webkit-inner-spin-button{-webkit-appearance:none}
+.pinp:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,215,0,.2)}
+.ko-pen-badge{font-size:.58rem;color:var(--gold);font-weight:700;margin-top:2px;letter-spacing:.02em}
+.ko-note{text-align:center;padding:30px 18px;color:var(--muted);font-size:.82rem;background:var(--s1);border:1px dashed var(--border);border-radius:var(--r)}
+@media(max-width:640px){
+  .ko-row{grid-template-columns:50px 1fr 92px 1fr;padding:7px 10px;gap:5px}
+  .pinp{width:22px;height:22px;font-size:.7rem}
+}
 </style>
 </head>
 <body>
@@ -618,9 +638,8 @@ function getAllMatches() {
 }
 
 function renderTabela(){
-  const allMatches=getAllMatches();
   const bst=calcSt('C'),br=bst.find(s=>s.t==='Brasil')||{pts:0,j:0,v:0,gp:0,gc:0,sg:0},bpos=bst.findIndex(s=>s.t==='Brasil')+1;
-  let html=`<div class="br-hero"><span class="br-hero-flag">🇧🇷</span><div class="br-hero-title">🏆 VAI BRASIL! 🏆</div><div class="br-hero-sub">Grupo C · MetLife · Gillette · Hard Rock · Lincoln Financial</div><div class="br-stats"><div class="st-box"><div class="st-val">${br.pts}</div><div class="st-lbl">Pontos</div></div><div class="st-box"><div class="st-val">${br.j}</div><div class="st-lbl">Jogos</div></div><div class="st-box"><div class="st-val">${br.v}</div><div class="st-lbl">Vitórias</div></div><div class="st-box"><div class="st-val">${br.gp}</div><div class="st-lbl">Gols</div></div><div class="st-box"><div class="st-val">${br.sg>0?'+'+br.sg:br.sg}</div><div class="st-lbl">Saldo</div></div><div class="st-box"><div class="st-val">${bpos}º</div><div class="st-lbl">Posição</div></div></div></div><div class="sec-h">📊 TABELA COMPLETA</div><div class="gg">`;
+  let html=`<div class="br-hero"><span class="br-hero-flag">🇧🇷</span><div class="br-hero-title">🏆 VAI BRASIL! 🏆</div><div class="br-hero-sub">Grupo C · MetLife · Gillette · Hard Rock · Lincoln Financial</div><div class="br-stats"><div class="st-box"><div class="st-val">${br.pts}</div><div class="st-lbl">Pontos</div></div><div class="st-box"><div class="st-val">${br.j}</div><div class="st-lbl">Jogos</div></div><div class="st-box"><div class="st-val">${br.v}</div><div class="st-lbl">Vitórias</div></div><div class="st-box"><div class="st-val">${br.gp}</div><div class="st-lbl">Gols</div></div><div class="st-box"><div class="st-val">${br.sg>0?'+'+br.sg:br.sg}</div><div class="st-lbl">Saldo</div></div><div class="st-box"><div class="st-val">${bpos}º</div><div class="st-lbl">Posição</div></div></div></div><div class="sec-h">📊 TABELA COMPLETA — FASE DE GRUPOS</div><div class="gg">`;
   Object.keys(GROUPS).forEach(g=>{
     const st=calcSt(g),brazil=(g==='C'),gflags=GROUPS[g].map(t=>fiSm(t)).join(' ');
     let stRows=st.map((row,i)=>{const pb=['pb1','pb2','pb3','pb4'][Math.min(i,3)];return`<tr><td><span class="pb ${pb}">${i+1}</span></td><td><div class="team-cell">${fi(row.t,24)}<span>${row.t}</span></div></td><td class="pts-v">${row.pts}</td><td>${row.j}</td><td>${row.v}</td><td>${row.e}</td><td>${row.d}</td><td>${row.gp}</td><td>${row.gc}</td><td class="${row.sg>0?'sg-p':row.sg<0?'sg-n':''}">${row.sg>0?'+'+row.sg:row.sg}</td></tr>`;}).join('');
@@ -629,51 +648,8 @@ function renderTabela(){
     Object.entries(rounds).forEach(([rn,ms])=>{matchRows+=`<div class="round-lbl">Rodada ${rn}</div>`;ms.forEach(m=>{const res=getRes(m.id),isBr=m.h==='Brasil'||m.a==='Brasil';let sc;if(ST.admin){const hv=res?res.h:'',av=res?res.a:'';let hc='',ac='';if(res){hc=res.h>res.a?'w':res.h<res.a?'l':'d';ac=res.a>res.h?'w':res.a<res.h?'l':'d';}sc=`<div class="sz"><input type="number" class="sinp ${hc}" data-mid="${m.id}" data-side="h" value="${hv}" min="0" max="30" inputmode="numeric" pattern="[0-9]*"><span class="ssep">:</span><input type="number" class="sinp ${ac}" data-mid="${m.id}" data-side="a" value="${av}" min="0" max="30" inputmode="numeric" pattern="[0-9]*"></div>`;}else if(res){const hc=res.h>res.a?'sw':res.h<res.a?'sl':'sd';const ac=res.a>res.h?'sw':res.a<res.h?'sl':'sd';sc=`<div class="sdsp"><span class="${hc}">${res.h}</span><span style="color:var(--muted)">:</span><span class="${ac}">${res.a}</span></div>`;}else sc=`<div class="sdsp novs">vs</div>`;matchRows+=`<div class="mr${isBr?' brmatch':''}"><div class="m-dt"><div class="m-d">${m.dt}</div><div class="m-t">${m.tm}</div><div class="m-v">📍 ${m.ci}</div></div><div class="m-home">${fi(m.h,22)}<span class="t-name">${m.h}</span></div>${sc}<div class="m-away"><span class="t-name">${m.a}</span>${fi(m.a,22)}</div></div>`;});});
     html+=`<div class="gc ${brazil?'brazil':''}"><div class="gc-head"><span class="gc-ttl">GRUPO ${g}${brazil?' 🇧🇷':''}</span><div class="gc-flags">${gflags}</div></div><table class="stt"><thead><tr><th>#</th><th style="text-align:left;padding-left:7px">Seleção</th><th>P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr></thead><tbody>${stRows}</tbody></table><div class="rounds-section">${matchRows}</div></div>`;
   });
-  
-  // FASE ELIMINATÓRIA
-  const koMatches = allMatches.filter(m => m.fase);
-  if (koMatches.length > 0) {
-    html += `<div class="sec-h" style="margin-top:28px">🏆 FASE ELIMINATÓRIA</div><div class="gg">`;
-    const faseOrder = ['16avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
-    const faseLabels = {
-      '16avos': '16 AVOS DE FINAL (28 Jun - 3 Jul)',
-      'oitavas': 'OITAVAS DE FINAL (4-7 Jul)',
-      'quartas': 'QUARTAS DE FINAL (9-11 Jul)',
-      'semis': 'SEMIFINAIS (14-15 Jul)',
-      'terceiro': 'DISPUTA DE 3º LUGAR (18 Jul)',
-      'final': 'GRANDE FINAL (19 Jul)'
-    };
-    faseOrder.forEach(fase => {
-      const ms = koMatches.filter(m => m.fase === fase).sort((a,b)=>a.ordem-b.ordem);
-      if (ms.length === 0) return;
-      let matchRows = `<div class="round-lbl">${faseLabels[fase]||fase}</div>`;
-      ms.forEach(m => {
-        const res=getRes(m.id);
-        const isBr=m.h==='Brasil'||m.a==='Brasil';
-        let sc;
-        if (ST.admin) {
-          const hv=res?res.h:'', av=res?res.a:'';
-          let hc='', ac='';
-          if(res){hc=res.h>res.a?'w':res.h<res.a?'l':'d'; ac=res.a>res.h?'w':res.a<res.h?'l':'d';}
-          const penH=res&&res.pen?res.pen.h:'';
-          const penA=res&&res.pen?res.pen.a:'';
-          const showPen=(res&&res.h===res.a)?'flex':'none';
-          sc=`<div class="sz" style="flex-direction:column;gap:3px"><div style="display:flex;align-items:center;gap:3px"><input type="number" class="sinp ${hc}" data-mid="${m.id}" data-side="h" value="${hv}" min="0" max="20" inputmode="numeric"><span class="ssep">:</span><input type="number" class="sinp ${ac}" data-mid="${m.id}" data-side="a" value="${av}" min="0" max="20" inputmode="numeric"></div><div class="ko-pen-wrap" style="display:${showPen}"><span class="ko-pen-lbl">PÊN</span><input type="number" class="pinp" data-penmid="${m.id}" data-side="h" value="${penH}" min="0" max="30"><span style="color:var(--muted);font-weight:700;font-size:.7rem">:</span><input type="number" class="pinp" data-penmid="${m.id}" data-side="a" value="${penA}" min="0" max="30"></div></div>`;
-        } else if (res) {
-          const hc=res.h>res.a?'sw':res.h<res.a?'sl':'sd';
-          const ac=res.a>res.h?'sw':res.a<res.h?'sl':'sd';
-          const penTxt=res.pen?`<div class="ko-pen-badge">pên ${res.pen.h}-${res.pen.a}</div>`:'';
-          sc=`<div style="display:flex;flex-direction:column;align-items:center">${res.h}:${res.a}${penTxt}</div>`;
-        } else {
-          sc=`<div class="sdsp novs">vs</div>`;
-        }
-        matchRows += `<div class="mr${isBr?' brmatch':''}"><div class="m-dt"><div class="m-d">${m.dt}</div><div class="m-t">${m.tm}</div><div class="m-v">📍 ${m.ci}</div></div><div class="m-home">${fi(m.h,22)}<span class="t-name">${m.h}</span></div>${sc}<div class="m-away"><span class="t-name">${m.a}</span>${fi(m.a,22)}</div></div>`;
-      });
-      html += `<div class="gc"><div class="gc-head"><span class="gc-ttl">${faseLabels[fase]||fase}</span></div><div class="rounds-section">${matchRows}</div></div>`;
-    });
-    html += `</div>`;
-  }
-  html+='</div>';document.getElementById('panel-tabela').innerHTML=html;
+  html+=`</div><p style="text-align:center;font-size:.68rem;color:var(--dim);margin-top:18px">🏆 A fase eliminatória (16 avos em diante) fica na aba <strong style="color:var(--gold)">Mata-Mata</strong></p>`;
+  document.getElementById('panel-tabela').innerHTML=html;
   if(ST.admin){
     document.querySelectorAll('#panel-tabela .sinp').forEach(inp=>{
       inp.addEventListener('input',e=>{
@@ -684,43 +660,22 @@ function renderTabela(){
           const hI=row.querySelector('.sinp[data-side="h"]');
           const aI=row.querySelector('.sinp[data-side="a"]');
           const hv=hI.value.trim(),av=aI.value.trim();
-          const penwrap=row.querySelector('.ko-pen-wrap');
           if(hv===''&&av===''){
             delRes(mid);
-            if(penwrap)penwrap.style.display='none';
           }else if(hv!==''&&av!==''){
             const h=Math.max(0,parseInt(hv)||0),a=Math.max(0,parseInt(av)||0);
             hI.value=h;aI.value=a;
             setRes(mid,h,a);
             hI.className=`sinp ${h>a?'w':h<a?'l':'d'}`;
             aI.className=`sinp ${a>h?'w':a<h?'l':'d'}`;
-            if(penwrap)penwrap.style.display=(h===a)?'flex':'none';
             toast('💾 Resultado salvo');
-          }
-        },600);
-      });
-    });
-    document.querySelectorAll('#panel-tabela .pinp[data-penmid]').forEach(inp=>{
-      inp.addEventListener('input',e=>{
-        const mid=parseInt(e.target.dataset.penmid);
-        clearTimeout(penDeb[mid]);
-        penDeb[mid]=setTimeout(()=>{
-          const wrap=e.target.closest('.ko-pen-wrap');
-          const hI=wrap.querySelector('.pinp[data-side="h"]');
-          const aI=wrap.querySelector('.pinp[data-side="a"]');
-          const hv=hI.value.trim(),av=aI.value.trim();
-          if(hv!==''&&av!==''){
-            const h=Math.max(0,parseInt(hv)||0),a=Math.max(0,parseInt(av)||0);
-            hI.value=h;aI.value=a;
-            setPen(mid,h,a);
-            toast('💾 Pênaltis salvos');
           }
         },600);
       });
     });
   }
 }
-let resDeb={}, penDeb={};
+let resDeb={};
 
 function getMatchUTC(m){const[d,mo]=m.dt.split('/').map(Number);const[h,mn]=m.tm.split(':').map(Number);return new Date(Date.UTC(2026,mo-1,d,h+3,mn));}
 function matchStatus(m){const kick=getMatchUTC(m),lock=new Date(kick-5*60*1000),end=new Date(kick+115*60*1000),now=Date.now();if(now<lock)return{s:'open',ms:lock-now};if(now<end)return{s:'live',ms:end-now};return{s:'ended',ms:0};}
@@ -728,7 +683,27 @@ function fmtCountdown(ms){const d=Math.floor(ms/86400000),h=Math.floor((ms%86400
 
 // ══════════════════════════════════════════════════════
 //  🏆  BRACKET VISUAL - ESTILO CHAVEAMENTO
+//  (fonte única de verdade da fase eliminatória — usada
+//   apenas na aba Mata-Mata, sem duplicar em Tabela/Palpites)
 // ══════════════════════════════════════════════════════
+
+const FASE_ORDER = ['16avos', 'oitavas', 'quartas', 'semis', 'final'];
+const FASE_LABELS = {
+  '16avos': '16 AVOS DE FINAL',
+  'oitavas': 'OITAVAS DE FINAL',
+  'quartas': 'QUARTAS DE FINAL',
+  'semis': 'SEMIFINAIS',
+  'terceiro': 'DISPUTA DE 3º LUGAR',
+  'final': 'GRANDE FINAL'
+};
+const FASE_DATAS = {
+  '16avos': '28 Jun – 3 Jul',
+  'oitavas': '4–7 Jul',
+  'quartas': '9–11 Jul',
+  'semis': '14–15 Jul',
+  'terceiro': '18 Jul',
+  'final': '19 Jul'
+};
 
 function bracketLineHtml(team, score, isWin, isLose, isTbd) {
   const flag = team && FC[team] ? fi(team, 16) : '<span class="bm-flag" style="display:inline-block;width:16px;height:11px;border-radius:2px;background:rgba(255,255,255,.06)"></span>';
@@ -774,42 +749,28 @@ function renderBracket() {
   const allMatches = getAllMatches();
   const koMatches = allMatches.filter(m => m.fase);
   
-  // Organizar por fase
-  const faseOrder = ['16avos', 'oitavas', 'quartas', 'semis', 'final'];
-  const faseLabels = {
-    '16avos': '16 AVOS',
-    'oitavas': 'OITAVAS',
-    'quartas': 'QUARTAS',
-    'semis': 'SEMIS',
-    'final': 'FINAL'
-  };
-  
-  // Agrupar jogos por fase
+  // Agrupar jogos por fase (exclui "terceiro" da coluna principal do bracket)
   const grouped = {};
-  faseOrder.forEach(f => { grouped[f] = koMatches.filter(m => m.fase === f).sort((a,b)=>a.ordem-b.ordem); });
+  FASE_ORDER.forEach(f => { grouped[f] = koMatches.filter(m => m.fase === f).sort((a,b)=>a.ordem-b.ordem); });
   
-  // Construir HTML do bracket
   let html = `<div class="bracket-wrap"><div class="bracket-scroll">`;
   
-  // Para cada fase, criar uma coluna
-  faseOrder.forEach(fase => {
+  FASE_ORDER.forEach(fase => {
     const matches = grouped[fase] || [];
     const isFinal = fase === 'final';
     html += `<div class="bracket-col">`;
-    html += `<div class="bracket-col-label ${isFinal?'final-label':''}">${faseLabels[fase]}</div>`;
+    html += `<div class="bracket-col-label ${isFinal?'final-label':''}">${FASE_LABELS[fase]}</div>`;
     matches.forEach(m => {
       html += bracketMatchHtml(m, isFinal);
     });
     if (matches.length === 0) {
       html += `<div class="bracket-match" style="opacity:0.4;min-height:40px;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--dim)">aguardando</div>`;
     }
-    // Conectores entre colunas
     if (fase !== 'final') {
-      const nextFase = faseOrder[faseOrder.indexOf(fase)+1];
+      const nextFase = FASE_ORDER[FASE_ORDER.indexOf(fase)+1];
       if (nextFase && grouped[nextFase] && grouped[nextFase].length > 0) {
         const count = Math.max(matches.length, grouped[nextFase].length);
         html += `<div class="bracket-connector" style="height:${count * 44}px">`;
-        // Linhas de conexão
         for (let i = 0; i < count; i++) {
           if (i > 0) html += `<div class="conn-dot"></div>`;
           html += `<div class="conn-line"></div>`;
@@ -820,7 +781,6 @@ function renderBracket() {
     html += `</div>`;
   });
   
-  // 3º Lugar
   const terceiro = koMatches.filter(m => m.fase === 'terceiro');
   if (terceiro.length > 0) {
     html += `<div class="bracket-col" style="justify-content:flex-end;">`;
@@ -833,7 +793,6 @@ function renderBracket() {
   
   html += `</div>`;
   
-  // Legenda inferior
   html += `<div class="bracket-bottom">
     <span class="bb-trophy">🏆</span>
     <div class="bb-line">VENCEDOR</div>
@@ -841,40 +800,6 @@ function renderBracket() {
   </div></div>`;
   
   return html;
-}
-
-function renderMataMata(){
-  const el=document.getElementById('panel-mata');
-  let html=`<div class="sec-h">🏆 CHAVEAMENTO — MATA-MATA</div>`;
-  html += renderBracket();
-  
-  // Detalhes por rodada (com edição para admin)
-  const allMatches = getAllMatches();
-  const koMatches = allMatches.filter(m => m.fase);
-  if (koMatches.length > 0) {
-    html += `<div class="sec-h" style="font-size:1.2rem;margin-top:20px">📋 DETALHES POR RODADA</div>`;
-    const faseOrder = ['16avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
-    const faseLabels = {
-      '16avos': '16 AVOS DE FINAL (28 Jun - 3 Jul)',
-      'oitavas': 'OITAVAS DE FINAL (4-7 Jul)',
-      'quartas': 'QUARTAS DE FINAL (9-11 Jul)',
-      'semis': 'SEMIFINAIS (14-15 Jul)',
-      'terceiro': 'DISPUTA DE 3º LUGAR (18 Jul)',
-      'final': 'GRANDE FINAL (19 Jul)'
-    };
-    faseOrder.forEach(fase => {
-      const ms = koMatches.filter(m => m.fase === fase).sort((a,b)=>a.ordem-b.ordem);
-      if (ms.length === 0) return;
-      html += `<div class="ko-round"><div class="ko-round-ttl">${faseLabels[fase]||fase}</div><div class="ko-list">${ms.map(koRowHtml).join('')}</div></div>`;
-    });
-  } else {
-    html += `<div class="ko-note">⏳ Aguardando definição dos classificados...</div>`;
-  }
-  
-  el.innerHTML=html;
-  attachKoAdminListeners();
-  clearTimeout(window._mataTimer);
-  window._mataTimer=setTimeout(()=>{if(document.querySelector('#panel-mata.on'))renderMataMata();},30000);
 }
 
 function koRowHtml(m){
@@ -898,6 +823,31 @@ function koRowHtml(m){
     sc=`<div class="sdsp novs">vs</div>`;
   }
   return `<div class="ko-row${isBr?' brmatch':''}"><div class="m-dt"><div class="m-d">${m.dt}</div><div class="m-t">${m.tm}</div><div class="m-v">📍 ${m.ci}</div></div><div class="m-home">${fi(m.h,22)}<span class="t-name">${m.h}</span></div>${sc}<div class="m-away"><span class="t-name">${m.a}</span>${fi(m.a,22)}</div></div>`;
+}
+
+function renderMataMata(){
+  const el=document.getElementById('panel-mata');
+  let html=`<div class="sec-h">🏆 CHAVEAMENTO — MATA-MATA</div>`;
+  html += renderBracket();
+  
+  const allMatches = getAllMatches();
+  const koMatches = allMatches.filter(m => m.fase);
+  if (koMatches.length > 0) {
+    html += `<div class="sec-h" style="font-size:1.2rem;margin-top:20px">📋 DETALHES POR RODADA</div>`;
+    const detailOrder = [...FASE_ORDER.slice(0,4), 'terceiro', 'final'];
+    detailOrder.forEach(fase => {
+      const ms = koMatches.filter(m => m.fase === fase).sort((a,b)=>a.ordem-b.ordem);
+      if (ms.length === 0) return;
+      html += `<div class="ko-round"><div class="ko-round-ttl">${FASE_LABELS[fase]} <span style="color:var(--dim);font-family:var(--fb);font-size:.62rem;letter-spacing:0;text-transform:none">(${FASE_DATAS[fase]})</span></div><div class="ko-list">${ms.map(koRowHtml).join('')}</div></div>`;
+    });
+  } else {
+    html += `<div class="ko-note">⏳ Aguardando definição dos classificados das 16 avos de final...</div>`;
+  }
+  
+  el.innerHTML=html;
+  attachKoAdminListeners();
+  clearTimeout(window._mataTimer);
+  window._mataTimer=setTimeout(()=>{if(document.querySelector('#panel-mata.on'))renderMataMata();},30000);
 }
 
 function attachKoAdminListeners(){
@@ -965,19 +915,11 @@ function renderPalpites(){
   const koMatches = allMatches.filter(m => m.fase);
   if (koMatches.length > 0) {
     html += `<div class="sec-h" style="margin-top:32px">🏆 PALPITES — FASE ELIMINATÓRIA</div>`;
-    const faseOrder = ['16avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
-    const faseLabels = {
-      '16avos': '16 AVOS DE FINAL (28 Jun - 3 Jul)',
-      'oitavas': 'OITAVAS DE FINAL (4-7 Jul)',
-      'quartas': 'QUARTAS DE FINAL (9-11 Jul)',
-      'semis': 'SEMIFINAIS (14-15 Jul)',
-      'terceiro': 'DISPUTA DE 3º LUGAR (18 Jul)',
-      'final': 'GRANDE FINAL (19 Jul)'
-    };
-    faseOrder.forEach(fase => {
+    const detailOrder = [...FASE_ORDER.slice(0,4), 'terceiro', 'final'];
+    detailOrder.forEach(fase => {
       const ms = koMatches.filter(m => m.fase === fase).sort((a,b)=>a.ordem-b.ordem);
       if (ms.length === 0) return;
-      let rows = `<div class="round-lbl">${faseLabels[fase]||fase}</div>`;
+      let rows = `<div class="round-lbl">${FASE_LABELS[fase]} (${FASE_DATAS[fase]})</div>`;
       ms.forEach(m => {
         const pred=getPred(m.id), res=getRes(m.id), pp=calcPts(pred,res);
         const hv=pred?pred.h:'', av=pred?pred.a:'';
@@ -995,7 +937,7 @@ function renderPalpites(){
         }
         rows += `<div class="pred-row${locked?' locked':''}${isBr?' brmatch':''}"><div class="m-dt"><div class="m-d">${m.dt}</div><div class="m-t">${m.tm}</div></div><div class="m-home">${fi(m.h,22)}<span class="t-name">${m.h}</span></div>${sc}<div class="m-away"><span class="t-name">${m.a}</span>${fi(m.a,22)}</div><div class="pts-badge ${pClass(pp)}">${pLabel(pp)}</div></div>`;
       });
-      html += `<div class="ko-round"><div class="ko-round-ttl">${faseLabels[fase]||fase}</div><div class="ko-list">${rows}</div></div>`;
+      html += `<div class="ko-round"><div class="ko-round-ttl">${FASE_LABELS[fase]}</div><div class="ko-list">${rows}</div></div>`;
     });
   }
   el.innerHTML=html;
@@ -1236,12 +1178,11 @@ async function openPartDetail(uname){
     const koMatches=all.filter(m=>m.fase);
     if(koMatches.length>0){
       h+=`<div class="pd-grp-lbl" style="background:rgba(255,215,0,.08);color:var(--gold)">🏆 FASE ELIMINATÓRIA</div>`;
-      const faseOrder = ['16avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
-      const faseLabels = {'16avos':'16 AVOS','oitavas':'OITAVAS','quartas':'QUARTAS','semis':'SEMIS','terceiro':'3º LUGAR','final':'FINAL'};
-      faseOrder.forEach(fase=>{
+      const detailOrder = [...FASE_ORDER.slice(0,4), 'terceiro', 'final'];
+      detailOrder.forEach(fase=>{
         const ms=koMatches.filter(m=>m.fase===fase).sort((a,b)=>a.ordem-b.ordem);
         if(!ms.length)return;
-        h+=`<div class="pd-grp-lbl">${faseLabels[fase]||fase}</div>`;
+        h+=`<div class="pd-grp-lbl">${FASE_LABELS[fase]}</div>`;
         ms.forEach(m=>{
           const pred=preds[m.id]||null,res=getRes(m.id),pp=calcPts(pred,res),isBr=(m.h==='Brasil'||m.a==='Brasil'),st=matchStatus(m),locked=(st.s!=='open');
           const rc=res?`<div class="pd-res-display">${res.h}:${res.a}${res.pen?`<div style="font-size:.48rem;color:var(--gold);letter-spacing:0;font-family:var(--fb);font-weight:700;margin-top:1px">pên ${res.pen.h}-${res.pen.a}</div>`:''}</div>`:`<div style="color:var(--dim);font-size:.72rem;text-align:center">—</div>`;
