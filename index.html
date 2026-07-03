@@ -275,28 +275,16 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
 }
 @media(max-width:400px){.t-name{max-width:52px;font-size:.66rem}}
 
-/* ═══ BRACKET VISUAL — estilo "poster" (chaveamento em árvore convergente) ═══ */
-.symbracket-wrap{overflow-x:auto;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(255,215,0,.05),transparent 60%),linear-gradient(180deg,#000 0%,#050d07 100%);border:1px solid var(--brd-y);border-radius:var(--r);padding:18px 10px 22px;margin-bottom:20px}
-.symbracket-title{text-align:center;font-family:var(--fh);font-size:2.1rem;letter-spacing:.14em;background:linear-gradient(180deg,#fff 0%,var(--gold) 55%,#c97800 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px}
-.symbracket-sub{text-align:center;font-size:.62rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+/* ═══ BRACKET VISUAL — estilo ESPN (colunas em fluxo único) ═══ */
+.symbracket-wrap{overflow-x:auto;background:linear-gradient(180deg,#000 0%,#050d07 100%);border:1px solid var(--brd-y);border-radius:var(--r);padding:18px 10px 22px;margin-bottom:20px}
+.symbracket-title{text-align:center;font-family:var(--fh);font-size:2rem;letter-spacing:.12em;background:linear-gradient(180deg,#fff 0%,var(--gold) 55%,#c97800 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px}
+.symbracket-sub{text-align:center;font-size:.62rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
 .symbracket-svg{display:block;margin:0 auto}
-.symbracket-svg .bkl{stroke:rgba(255,215,0,.4);stroke-width:2;stroke-linecap:round}
-.symbracket-svg .bkl.gf{stroke:var(--gold);stroke-width:3}
-.symbracket-svg .bkdot{fill:rgba(255,215,0,.55)}
-.symbracket-svg .bk-col-lbl{fill:var(--dim);font-family:var(--fb);font-size:14px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase}
-.symbracket-svg .bk-trophy-emoji{font-size:50px}
-.symbracket-svg .bk-champ-tbd{fill:var(--dim);font-family:var(--fb);font-size:12px;letter-spacing:2.5px}
-.lf-col{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--fb);height:100%}
-.lf-flag{width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--gold);box-shadow:0 1px 6px rgba(0,0,0,.6),0 0 6px rgba(255,215,0,.3);display:flex;align-items:center;justify-content:center;background:#0a0a0a}
-.lf-flag.win{border-color:var(--gl);box-shadow:0 1px 6px rgba(0,0,0,.6),0 0 9px rgba(0,238,90,.55)}
-.lf-flag.lose{opacity:.5;filter:grayscale(55%)}
-.lf-flag .fi{width:100%!important;height:100%!important;background-size:cover!important;border-radius:0!important}
-.lf-flag-empty{width:100%;height:100%;background:rgba(255,255,255,.05)}
-.lf-name-line{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;max-width:108px;line-height:1.1}
-.lf-name{overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em}
-.lf-name.win{color:var(--gl);font-weight:800}
-.lf-name.lose{color:var(--dim);font-weight:500;opacity:.6}
-.lf-score{font-family:var(--fh);font-size:14px;color:var(--gold);min-width:12px;text-align:center;line-height:1}
+.symbracket-svg .bkl{stroke:rgba(255,215,0,.42);stroke-width:2;stroke-linecap:round;fill:none}
+.symbracket-svg .bkl.dash{stroke:rgba(255,215,0,.28);stroke-dasharray:5 5}
+.symbracket-svg .bk-col-lbl{fill:var(--dim);font-family:var(--fb);font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
+.symbracket-svg .bk-mini-lbl{fill:var(--dim);font-family:var(--fb);font-size:12px;font-weight:700;letter-spacing:1px}
+.symbracket-svg .bk-mini-lbl.gold{fill:var(--gold)}
 .sb-card{background:rgba(10,20,14,.94);border:1.5px solid var(--brd-g);border-radius:8px;padding:3px 8px;display:flex;flex-direction:column;justify-content:center;gap:2px;height:100%;box-shadow:0 3px 12px rgba(0,0,0,.55)}
 .sb-row{display:flex;align-items:center;gap:6px;font-family:var(--fb);font-size:12.5px;font-weight:700;color:var(--muted)}
 .sb-flag{width:20px;height:20px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1px solid rgba(255,215,0,.5);display:flex;align-items:center;justify-content:center;background:#0a0a0a}
@@ -307,8 +295,6 @@ footer{text-align:center;padding:30px 14px;color:var(--dim);font-size:.68rem;bor
 .sb-name.lose{color:var(--dim);opacity:.55}
 .sb-score{font-family:var(--fh);font-size:14px;color:var(--gold);min-width:13px;text-align:right}
 .sb-pen{font-size:9px;color:var(--gold);text-align:center;letter-spacing:.04em;margin-top:1px}
-.bk-champ{display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--fh);font-size:19px;letter-spacing:1px;color:var(--gold);text-shadow:0 0 10px rgba(255,215,0,.5)}
-.bk-champ .fi{width:26px;height:19px;border-radius:3px}
 
 /* ═══ MATA-MATA · DETALHES POR RODADA (antes ausente = layout quebrado) ═══ */
 .ko-round{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
@@ -738,98 +724,63 @@ const FASE_DATAS = {
 };
 
 // ══════════════════════════════════════════════════════
-//  🌳  BRACKET EM ÁRVORE CONVERGENTE (estilo pôster "Round of 32")
-//  16avos ficam fixos nas pontas esquerda/direita e as linhas
-//  douradas convergem para o troféu no centro, exatamente como
-//  a referência visual — tudo derivado de ROUND32 +
-//  generateKnockoutMatches(), sem duplicar dado nenhum.
+//  🌳  BRACKET ESTILO ESPN — colunas em fluxo único
+//  (16avos → Oitavas → Quartas → Semis → 3º lugar/Final),
+//  cada confronto num card com bandeira+nome+placar, ligado
+//  por linhas em cotovelo até a coluna seguinte. Tudo
+//  derivado de ROUND32 + generateKnockoutMatches(), sem
+//  duplicar dado nenhum.
 // ══════════════════════════════════════════════════════
-const BRACKET_LEFT_R32    = [73,75,74,77,83,84,81,82];
-const BRACKET_RIGHT_R32   = [76,78,79,80,86,88,85,87];
-const BRACKET_LEFT_OITAVAS  = [89,90,93,94];
-const BRACKET_RIGHT_OITAVAS = [91,92,95,96];
-const BRACKET_LEFT_QUARTAS  = [97,98];
-const BRACKET_RIGHT_QUARTAS = [99,100];
-const BRACKET_LEFT_SEMI  = 101;
-const BRACKET_RIGHT_SEMI = 102;
-const BRACKET_FINAL      = 104;
+const FULL_R32_ORDER = [73,75,74,77,83,84,81,82,76,78,79,80,86,88,85,87];
+const OITAVA_ORDER   = [89,90,93,94,91,92,95,96];
+const QUARTA_ORDER   = [97,98,99,100];
+const SEMI_ORDER     = [101,102];
+const FINAL_ID    = 104;
+const TERCEIRO_ID = 103;
 
 function leafTeam(r32id, role){
   const m = ROUND32.find(x=>x.id===r32id);
   return m ? m[role] : null;
 }
 
-function buildSymBracket(){
+function buildEspnBracket(){
   const KO = generateKnockoutMatches();
   const koById = id => KO.find(k=>k.id===id) || null;
-  function bkWinner(id){
-    if (id <= 88) return getWinner(id);
-    return localWinnerFromObj(koById(id));
-  }
+  function bkWinner(id){ if (id <= 88) return getWinner(id); return localWinnerFromObj(koById(id)); }
+  function bkLoser(id){ if (id <= 88) return getLoser(id); return localLoserFromObj(koById(id)); }
 
-  const DW=1000, DH=1400;
-  const ROWH=76, Y0=92;
+  const ROWH=66, Y0=64;
   const leafYs=[]; for(let i=0;i<16;i++) leafYs.push(Y0+i*ROWH);
   const pairAvg=arr=>{const o=[];for(let i=0;i<arr.length;i+=2)o.push((arr[i]+arr[i+1])/2);return o;};
-  const matchYs=pairAvg(leafYs), oitavaYs=pairAvg(matchYs), quartaYs=pairAvg(oitavaYs), semiYs=pairAvg(quartaYs);
-  const X0=54, STEP=118;
-  const xsL=[X0,X0+STEP,X0+2*STEP,X0+3*STEP,X0+4*STEP];
-  const xsR=xsL.map(x=>DW-x);
-  const finalX=DW/2, finalY=semiYs[0];
+  const oitavaYs=pairAvg(leafYs), quartaYs=pairAvg(oitavaYs), semiYs=pairAvg(quartaYs), finalArr=pairAvg(semiYs);
+  const finalY=finalArr[0];
+  const terceiroY=finalY+150;
 
-  function elbow(xA,yA,yB,xB){
-    return `<line x1="${xA}" y1="${yA}" x2="${xB}" y2="${yA}" class="bkl"/><line x1="${xA}" y1="${yB}" x2="${xB}" y2="${yB}" class="bkl"/><line x1="${xB}" y1="${yA}" x2="${xB}" y2="${yB}" class="bkl"/>`;
-  }
-  function sideLines(xs){
-    let s='', cur=leafYs;
-    for(let L=0;L<4;L++){
-      const next=pairAvg(cur);
-      for(let i=0;i<cur.length;i+=2){
-        s+=elbow(xs[L],cur[i],cur[i+1],xs[L+1]);
-        s+=`<circle cx="${xs[L+1]}" cy="${(cur[i]+cur[i+1])/2}" r="3.5" class="bkdot"/>`;
-      }
-      cur=next;
-    }
-    return s;
-  }
-  let svgLines = sideLines(xsL)+sideLines(xsR);
-  svgLines += `<line x1="${xsL[4]}" y1="${finalY}" x2="${finalX-92}" y2="${finalY}" class="bkl gf"/>`;
-  svgLines += `<line x1="${xsR[4]}" y1="${finalY}" x2="${finalX+92}" y2="${finalY}" class="bkl gf"/>`;
+  const X0=100, STEP=205;
+  const xs=[X0,X0+STEP,X0+2*STEP,X0+3*STEP,X0+4*STEP];
+  const DW=xs[4]+140, DH=terceiroY+80;
 
-  // ── linhas dos times (16avos) — bandeira alinhada na linha, nome embaixo ──
-  let leaves='';
-  function leafRow(x,y,team,score,isWin,isLose){
-    const flagCls = 'lf-flag'+(isWin?' win':(isLose?' lose':''));
-    const flag = team && FC[team] ? `<span class="fi fi-${FC[team]}"></span>` : '<span class="lf-flag-empty"></span>';
-    const nameCls = 'lf-name'+(isWin?' win':(isLose?' lose':''));
-    const sc = (score!==null&&score!==undefined) ? `<span class="lf-score">${score}</span>` : '';
-    const w=112, flagH=32, gap=4, textH=15, h=flagH+gap+textH;
-    const fx=x-w/2, fy=y-flagH/2;
-    return `<foreignObject x="${fx}" y="${fy}" width="${w}" height="${h}"><div xmlns="http://www.w3.org/1999/xhtml" class="lf-col"><span class="${flagCls}">${flag}</span><span class="lf-name-line"><span class="${nameCls}">${escH(team||'TBD')}</span>${sc}</span></div></foreignObject>`;
+  function elbow(xA,yA,yB,xB,cls){
+    cls=cls||'bkl';
+    return `<line x1="${xA}" y1="${yA}" x2="${xB}" y2="${yA}" class="${cls}"/><line x1="${xA}" y1="${yB}" x2="${xB}" y2="${yB}" class="${cls}"/><line x1="${xB}" y1="${yA}" x2="${xB}" y2="${yB}" class="${cls}"/>`;
   }
-  [[BRACKET_LEFT_R32,'L'],[BRACKET_RIGHT_R32,'R']].forEach(([ids,side])=>{
-    const xs = side==='L'?xsL:xsR;
-    ids.forEach((r32id,mi)=>{
-      const res=getRes(r32id);
-      const win=res?getWinner(r32id):null;
-      ['h','a'].forEach((role,ri)=>{
-        const team=leafTeam(r32id,role);
-        const y=leafYs[mi*2+ri];
-        const score= res ? (role==='h'?res.h:res.a) : null;
-        const isWin = !!(win && team===win);
-        const isLose = !!(res && win && team!==win);
-        leaves += leafRow(xs[0],y,team,score,isWin,isLose);
-      });
-    });
-  });
+  let svgLines='', cur=leafYs;
+  for(let L=0;L<4;L++){
+    const next=pairAvg(cur);
+    for(let i=0;i<cur.length;i+=2){ svgLines+=elbow(xs[L],cur[i],cur[i+1],xs[L+1]); }
+    cur=next;
+  }
+  // ramais tracejados das semis até a disputa de 3º lugar
+  svgLines += `<line x1="${xs[3]}" y1="${semiYs[0]}" x2="${xs[4]}" y2="${terceiroY}" class="bkl dash"/>`;
+  svgLines += `<line x1="${xs[3]}" y1="${semiYs[1]}" x2="${xs[4]}" y2="${terceiroY}" class="bkl dash"/>`;
 
-  // ── cards das fases seguintes (oitavas/quartas/semis/final) ──
+  // ── cards de confronto (mesmo estilo em todas as colunas) ──
   let cards='';
   function stageCard(matchId, x, y, teamTopFn, teamBotFn){
     const res=getRes(matchId);
     const teamTop=teamTopFn(), teamBot=teamBotFn();
     const win = res?bkWinner(matchId):null;
-    const w=176,h=52;
+    const w=178,h=52;
     const rowHtml=(team,sc,isW)=>{
       const flag = team && FC[team] ? `<span class="fi fi-${FC[team]}"></span>` : '<span class="sb-empty"></span>';
       const nc='sb-name'+(isW?' win':(res?' lose':''));
@@ -838,39 +789,36 @@ function buildSymBracket(){
     const penTxt = res&&res.pen?`pên ${res.pen.h}-${res.pen.a}`:'';
     return `<foreignObject x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}"><div xmlns="http://www.w3.org/1999/xhtml" class="sb-card">${rowHtml(teamTop,res?res.h:null,!!(win&&teamTop===win))}${rowHtml(teamBot,res?res.a:null,!!(win&&teamBot===win))}${penTxt?`<div class="sb-pen">${penTxt}</div>`:''}</div></foreignObject>`;
   }
-  BRACKET_LEFT_OITAVAS.forEach((oid,i)=>{ cards+=stageCard(oid, xsL[2], oitavaYs[i], ()=>bkWinner(BRACKET_LEFT_R32[i*2]), ()=>bkWinner(BRACKET_LEFT_R32[i*2+1])); });
-  BRACKET_RIGHT_OITAVAS.forEach((oid,i)=>{ cards+=stageCard(oid, xsR[2], oitavaYs[i], ()=>bkWinner(BRACKET_RIGHT_R32[i*2]), ()=>bkWinner(BRACKET_RIGHT_R32[i*2+1])); });
-  BRACKET_LEFT_QUARTAS.forEach((qid,i)=>{ cards+=stageCard(qid, xsL[3], quartaYs[i], ()=>bkWinner(BRACKET_LEFT_OITAVAS[i*2]), ()=>bkWinner(BRACKET_LEFT_OITAVAS[i*2+1])); });
-  BRACKET_RIGHT_QUARTAS.forEach((qid,i)=>{ cards+=stageCard(qid, xsR[3], quartaYs[i], ()=>bkWinner(BRACKET_RIGHT_OITAVAS[i*2]), ()=>bkWinner(BRACKET_RIGHT_OITAVAS[i*2+1])); });
-  cards+=stageCard(BRACKET_LEFT_SEMI,  xsL[4], semiYs[0], ()=>bkWinner(BRACKET_LEFT_QUARTAS[0]),  ()=>bkWinner(BRACKET_LEFT_QUARTAS[1]));
-  cards+=stageCard(BRACKET_RIGHT_SEMI, xsR[4], semiYs[0], ()=>bkWinner(BRACKET_RIGHT_QUARTAS[0]), ()=>bkWinner(BRACKET_RIGHT_QUARTAS[1]));
-  cards+=stageCard(BRACKET_FINAL, finalX, finalY, ()=>bkWinner(BRACKET_LEFT_SEMI), ()=>bkWinner(BRACKET_RIGHT_SEMI));
 
-  // ── troféu central ──
-  const champion = bkWinner(BRACKET_FINAL);
-  const trophyY = finalY+96;
-  let trophyHtml = `<text x="${finalX}" y="${trophyY}" text-anchor="middle" class="bk-trophy-emoji">🏆</text>`;
-  if(champion){
-    trophyHtml += `<foreignObject x="${finalX-100}" y="${trophyY+16}" width="200" height="36"><div xmlns="http://www.w3.org/1999/xhtml" class="bk-champ">${FC[champion]?`<span class="fi fi-${FC[champion]}"></span>`:''}<span>${escH(champion)}</span></div></foreignObject>`;
-  } else {
-    trophyHtml += `<text x="${finalX}" y="${trophyY+30}" text-anchor="middle" class="bk-champ-tbd">CAMPEÃO</text>`;
-  }
+  FULL_R32_ORDER.forEach((r32id,i)=>{
+    cards+=stageCard(r32id, xs[0], leafYs[i], ()=>leafTeam(r32id,'h'), ()=>leafTeam(r32id,'a'));
+  });
+  OITAVA_ORDER.forEach((oid,i)=>{
+    cards+=stageCard(oid, xs[1], oitavaYs[i], ()=>bkWinner(FULL_R32_ORDER[i*2]), ()=>bkWinner(FULL_R32_ORDER[i*2+1]));
+  });
+  QUARTA_ORDER.forEach((qid,i)=>{
+    cards+=stageCard(qid, xs[2], quartaYs[i], ()=>bkWinner(OITAVA_ORDER[i*2]), ()=>bkWinner(OITAVA_ORDER[i*2+1]));
+  });
+  SEMI_ORDER.forEach((sid,i)=>{
+    cards+=stageCard(sid, xs[3], semiYs[i], ()=>bkWinner(QUARTA_ORDER[i*2]), ()=>bkWinner(QUARTA_ORDER[i*2+1]));
+  });
+  cards+=stageCard(FINAL_ID, xs[4], finalY, ()=>bkWinner(SEMI_ORDER[0]), ()=>bkWinner(SEMI_ORDER[1]));
+  cards+=stageCard(TERCEIRO_ID, xs[4], terceiroY, ()=>bkLoser(SEMI_ORDER[0]), ()=>bkLoser(SEMI_ORDER[1]));
 
-  // ── rótulos das colunas ──
+  // ── rótulos ──
   const headers = [
-    {x:(xsL[0]+xsL[1])/2, t:'16 AVOS'}, {x:(xsL[1]+xsL[2])/2, t:'OITAVAS'},
-    {x:(xsL[2]+xsL[3])/2, t:'QUARTAS'}, {x:(xsL[3]+xsL[4])/2, t:'SEMIS'},
-    {x:(xsR[0]+xsR[1])/2, t:'16 AVOS'}, {x:(xsR[1]+xsR[2])/2, t:'OITAVAS'},
-    {x:(xsR[2]+xsR[3])/2, t:'QUARTAS'}, {x:(xsR[3]+xsR[4])/2, t:'SEMIS'},
-    {x:finalX, t:'FINAL'}
+    {x:xs[0],t:'16 AVOS DE FINAL'}, {x:xs[1],t:'OITAVAS DE FINAL'},
+    {x:xs[2],t:'QUARTAS DE FINAL'}, {x:xs[3],t:'SEMIFINAIS'},
+    {x:xs[4],t:'3º LUGAR E FINAL'}
   ];
-  const headerSvg = headers.map(h=>`<text x="${h.x}" y="42" text-anchor="middle" class="bk-col-lbl">${h.t}</text>`).join('');
+  const headerSvg = headers.map(h=>`<text x="${h.x}" y="30" text-anchor="middle" class="bk-col-lbl">${h.t}</text>`).join('');
+  const miniLbls = `<text x="${xs[4]}" y="${finalY-40}" text-anchor="middle" class="bk-mini-lbl gold">🏆 FINAL</text><text x="${xs[4]}" y="${terceiroY-38}" text-anchor="middle" class="bk-mini-lbl">🥉 3º LUGAR</text>`;
 
-  return `<svg viewBox="0 0 ${DW} ${DH}" width="980" height="1372" class="symbracket-svg" xmlns="http://www.w3.org/2000/svg">${headerSvg}${svgLines}${leaves}${cards}${trophyHtml}</svg>`;
+  return `<svg viewBox="0 0 ${DW} ${DH}" width="${Math.round(DW*0.94)}" height="${Math.round(DH*0.94)}" class="symbracket-svg" xmlns="http://www.w3.org/2000/svg">${headerSvg}${miniLbls}${svgLines}${cards}</svg>`;
 }
 
 function renderBracket() {
-  return `<div class="symbracket-wrap"><div class="symbracket-title">🏆 CAMINHO ATÉ A FINAL</div><div class="symbracket-sub">16 avos de final · role para o lado para ver tudo</div>${buildSymBracket()}</div>`;
+  return `<div class="symbracket-wrap"><div class="symbracket-title">🏆 CHAVEAMENTO — MATA-MATA</div><div class="symbracket-sub">16 avos de final → oitavas → quartas → semis → final · role para o lado para ver tudo</div>${buildEspnBracket()}</div>`;
 }
 
 function koRowHtml(m){
