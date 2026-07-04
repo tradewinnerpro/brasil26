@@ -528,14 +528,14 @@ function generateKnockoutMatches() {
   
   // OITAVAS (8 jogos) — a partir dos vencedores dos 16avos (73-88)
   const oitavas = [
-    {id:89, dt:'04/07', tm:'14:00', h:getWinner(73), a:getWinner(75), ci:'NRG Stadium (Houston)', fase:'oitavas', ordem:1},
-    {id:90, dt:'04/07', tm:'18:00', h:getWinner(74), a:getWinner(77), ci:'Lincoln Financial (Filadélfia)', fase:'oitavas', ordem:2},
-    {id:91, dt:'05/07', tm:'17:00', h:getWinner(76), a:getWinner(78), ci:'MetLife Stadium (NJ)', fase:'oitavas', ordem:3},
+    {id:89, dt:'04/07', tm:'18:00', h:getWinner(75), a:getWinner(78), ci:'Lincoln Financial (Filadélfia)', fase:'oitavas', ordem:1},
+    {id:90, dt:'04/07', tm:'14:00', h:getWinner(73), a:getWinner(76), ci:'NRG Stadium (Houston)', fase:'oitavas', ordem:2},
+    {id:91, dt:'05/07', tm:'17:00', h:getWinner(74), a:getWinner(77), ci:'MetLife Stadium (NJ)', fase:'oitavas', ordem:3},
     {id:92, dt:'05/07', tm:'21:00', h:getWinner(79), a:getWinner(80), ci:'Estádio Azteca (CDMX)', fase:'oitavas', ordem:4},
     {id:93, dt:'06/07', tm:'16:00', h:getWinner(83), a:getWinner(84), ci:'AT&T Stadium (Dallas)', fase:'oitavas', ordem:5},
     {id:94, dt:'06/07', tm:'21:00', h:getWinner(81), a:getWinner(82), ci:'Lumen Field (Seattle)', fase:'oitavas', ordem:6},
-    {id:95, dt:'07/07', tm:'13:00', h:getWinner(86), a:getWinner(88), ci:'Mercedes-Benz (Atlanta)', fase:'oitavas', ordem:7},
-    {id:96, dt:'07/07', tm:'17:00', h:getWinner(85), a:getWinner(87), ci:'BC Place (Vancouver)', fase:'oitavas', ordem:8}
+    {id:95, dt:'07/07', tm:'13:00', h:getWinner(86), a:getWinner(87), ci:'Mercedes-Benz (Atlanta)', fase:'oitavas', ordem:7},
+    {id:96, dt:'07/07', tm:'17:00', h:getWinner(85), a:getWinner(88), ci:'BC Place (Vancouver)', fase:'oitavas', ordem:8}
   ];
   oitavas.forEach(m => { if (m.h && m.a) all.push(m); });
   const findO = id => oitavas.find(o=>o.id===id);
@@ -731,12 +731,19 @@ const FASE_DATAS = {
 //  derivado de ROUND32 + generateKnockoutMatches(), sem
 //  duplicar dado nenhum.
 // ══════════════════════════════════════════════════════
-const FULL_R32_ORDER = [73,75,74,77,83,84,81,82,76,78,79,80,86,88,85,87];
-const OITAVA_ORDER   = [89,90,93,94,91,92,95,96];
+const FULL_R32_ORDER = [75,78,73,76,74,77,79,80,83,84,81,82,86,87,85,88];
+// ordem visual da coluna de oitavas — alinhada par-a-par com FULL_R32_ORDER
+const OITAVA_ORDER   = [89,90,91,92,93,94,95,96];
 const QUARTA_ORDER   = [97,98,99,100];
 const SEMI_ORDER     = [101,102];
 const FINAL_ID    = 104;
 const TERCEIRO_ID = 103;
+
+// Mapas explícitos de origem (h,a) — espelham exatamente generateKnockoutMatches(),
+// evitando bugs de troca de confronto por aritmética de posição.
+const OITAVA_SRC = {89:[75,78], 90:[73,76], 91:[74,77], 92:[79,80], 93:[83,84], 94:[81,82], 95:[86,87], 96:[85,88]};
+const QUARTA_SRC = {97:[89,90], 98:[93,94], 99:[91,92], 100:[95,96]};
+const SEMI_SRC   = {101:[97,98], 102:[99,100]};
 
 function leafTeam(r32id, role){
   const m = ROUND32.find(x=>x.id===r32id);
@@ -794,13 +801,16 @@ function buildEspnBracket(){
     cards+=stageCard(r32id, xs[0], leafYs[i], ()=>leafTeam(r32id,'h'), ()=>leafTeam(r32id,'a'));
   });
   OITAVA_ORDER.forEach((oid,i)=>{
-    cards+=stageCard(oid, xs[1], oitavaYs[i], ()=>bkWinner(FULL_R32_ORDER[i*2]), ()=>bkWinner(FULL_R32_ORDER[i*2+1]));
+    const [srcH,srcA]=OITAVA_SRC[oid];
+    cards+=stageCard(oid, xs[1], oitavaYs[i], ()=>bkWinner(srcH), ()=>bkWinner(srcA));
   });
   QUARTA_ORDER.forEach((qid,i)=>{
-    cards+=stageCard(qid, xs[2], quartaYs[i], ()=>bkWinner(OITAVA_ORDER[i*2]), ()=>bkWinner(OITAVA_ORDER[i*2+1]));
+    const [srcH,srcA]=QUARTA_SRC[qid];
+    cards+=stageCard(qid, xs[2], quartaYs[i], ()=>bkWinner(srcH), ()=>bkWinner(srcA));
   });
   SEMI_ORDER.forEach((sid,i)=>{
-    cards+=stageCard(sid, xs[3], semiYs[i], ()=>bkWinner(QUARTA_ORDER[i*2]), ()=>bkWinner(QUARTA_ORDER[i*2+1]));
+    const [srcH,srcA]=SEMI_SRC[sid];
+    cards+=stageCard(sid, xs[3], semiYs[i], ()=>bkWinner(srcH), ()=>bkWinner(srcA));
   });
   cards+=stageCard(FINAL_ID, xs[4], finalY, ()=>bkWinner(SEMI_ORDER[0]), ()=>bkWinner(SEMI_ORDER[1]));
   cards+=stageCard(TERCEIRO_ID, xs[4], terceiroY, ()=>bkLoser(SEMI_ORDER[0]), ()=>bkLoser(SEMI_ORDER[1]));
