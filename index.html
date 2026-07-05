@@ -158,6 +158,24 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.875
 .pts-badge{font-family:var(--fh);font-size:1.05rem;text-align:center;min-width:36px}
 .pts10{color:var(--gold)}.pts5{color:var(--green)}.pts0{color:var(--red)}.ptsnull{color:var(--dim)}
 .pts-legend{display:flex;flex-wrap:wrap;gap:12px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:var(--muted)}
+.ac-section{background:var(--s1);border:1px solid var(--brd-y);border-radius:var(--r);margin-bottom:16px;overflow:hidden}
+.ac-header{padding:12px 15px;cursor:pointer;font-family:var(--fh);font-size:1.15rem;letter-spacing:.06em;color:var(--gold);list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;user-select:none}
+.ac-header::-webkit-details-marker{display:none}
+.ac-header::before{content:'▸';font-size:.85em;transition:transform .2s}
+.ac-section[open] .ac-header::before{transform:rotate(90deg)}
+.ac-sub{font-family:var(--fb);font-size:.62rem;color:var(--muted);font-weight:600;letter-spacing:0}
+.ac-list{border-top:1px solid var(--border);max-height:340px;overflow-y:auto}
+.ac-row{display:flex;align-items:center;gap:10px;padding:8px 15px;border-bottom:1px solid rgba(255,255,255,.03);flex-wrap:wrap}
+.ac-row:last-child{border-bottom:none}
+.ac-row.brmatch{background:rgba(0,60,22,.15)}
+.ac-teams{display:flex;align-items:center;gap:6px;font-size:.76rem;font-weight:600;flex:1;min-width:200px}
+.ac-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
+.ac-vs{font-family:var(--fh);font-size:.9rem;letter-spacing:1px;color:var(--gold);padding:0 4px}
+.ac-pen{font-size:.6rem;color:var(--dim)}
+.ac-pred{font-size:.68rem;color:var(--muted)}
+.ac-pred strong{color:var(--text);font-family:var(--fh);letter-spacing:1px;font-size:.82rem}
+.ac-pts{font-family:var(--fh);font-size:1.1rem;margin-left:auto}
+.ac-empty{padding:16px 15px;text-align:center;color:var(--muted);font-size:.76rem;border-top:1px solid var(--border)}
 .pleg{display:flex;align-items:center;gap:6px}
 .pleg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .ofcl{font-size:.6rem;text-align:center;color:var(--muted);line-height:1.4}
@@ -641,6 +659,44 @@ function calcPts(p,r){if(!r)return null;if(!p)return 0;const{h:ph,a:pa}=p,{h:rh,
 const pClass=p=>p===null?'ptsnull':p===10?'pts10':p===5?'pts5':'pts0';
 const pLabel=p=>p===null?'—':p>0?'+'+p:'0';
 
+// ══════════════════════════════════════════════════════
+//  🎯  LISTA DE ACERTOS (usado em Palpites e no Admin)
+// ══════════════════════════════════════════════════════
+function computeAcertos(preds){
+  const list=[];
+  preds = preds || {};
+  getAllMatches().forEach(m=>{
+    const pred = preds[m.id];
+    const res = getRes(m.id);
+    if(!res || !pred || pred.h===null || pred.h===undefined) return;
+    const pts = calcPts(pred,res);
+    if(pts && pts>0) list.push({m,pred,res,pts});
+  });
+  list.sort((a,b)=> b.pts-a.pts || a.m.id-b.m.id);
+  return list;
+}
+function acertosListHtml(list){
+  if(!list.length) return `<div class="ac-empty">Nenhum acerto ainda — os pontos aparecem aqui assim que os resultados forem lançados.</div>`;
+  const rows = list.map(({m,pred,res,pts})=>{
+    const isBr = (m.h==='Brasil'||m.a==='Brasil');
+    const penTxt = res.pen ? ` <span class="ac-pen">(pên ${res.pen.h}-${res.pen.a})</span>` : '';
+    return `<div class="ac-row${isBr?' brmatch':''}">
+      <div class="ac-teams">${fi(m.h,20)}<span class="ac-t">${escH(m.h)}</span><span class="ac-vs">${res.h}-${res.a}</span><span class="ac-t">${escH(m.a)}</span>${fi(m.a,20)}${penTxt}</div>
+      <div class="ac-pred">seu palpite: <strong>${pred.h}-${pred.a}</strong></div>
+      <div class="ac-pts ${pClass(pts)}">${pLabel(pts)}</div>
+    </div>`;
+  }).join('');
+  return `<div class="ac-list">${rows}</div>`;
+}
+function acertosSectionHtml(preds, opts){
+  opts = opts||{};
+  const list = computeAcertos(preds);
+  const exatos = list.filter(x=>x.pts===10).length;
+  const certos = list.filter(x=>x.pts===5).length;
+  const collapsedAttr = opts.collapsed ? '' : ' open';
+  return `<details class="ac-section"${collapsedAttr}><summary class="ac-header">🎯 Acertos (${list.length}) <span class="ac-sub">— 🥇 ${exatos} exatos · ✅ ${certos} certos</span></summary>${acertosListHtml(list)}</details>`;
+}
+
 function calcSt(g){const st={};GROUPS[g].forEach(t=>{st[t]={pts:0,j:0,v:0,e:0,d:0,gp:0,gc:0}});MATCHES.filter(m=>m.g===g).forEach(m=>{const r=getRes(m.id);if(!r)return;const h=r.h,a=r.a;st[m.h].j++;st[m.a].j++;st[m.h].gp+=h;st[m.h].gc+=a;st[m.a].gp+=a;st[m.a].gc+=h;if(h>a){st[m.h].v++;st[m.h].pts+=3;st[m.a].d++;}else if(a>h){st[m.a].v++;st[m.a].pts+=3;st[m.h].d++;}else{st[m.h].e++;st[m.a].e++;st[m.h].pts++;st[m.a].pts++;}});return Object.entries(st).map(([t,s])=>({t,...s,sg:s.gp-s.gc})).sort((a,b)=>b.pts-a.pts||(b.sg-a.sg)||b.gp-a.gp||a.t.localeCompare(b.t));}
 
 // Obtém todos os jogos
@@ -765,7 +821,7 @@ function buildEspnBracket(){
 
   const X0=100, STEP=205;
   const xs=[X0,X0+STEP,X0+2*STEP,X0+3*STEP,X0+4*STEP];
-  const DW=xs[4]+140, DH=terceiroY+80;
+  const DW=xs[4]+140, DH=Math.max(terceiroY+80, leafYs[leafYs.length-1]+50);
 
   function elbow(xA,yA,yB,xB,cls){
     cls=cls||'bkl';
@@ -930,7 +986,7 @@ function renderPalpites(){
   const el=document.getElementById('panel-palpites');
   if(!ST.user){el.innerHTML=`<div class="empty"><span class="empty-ico">🎯</span><h2 class="empty-h">FAÇA SEUS PALPITES</h2><p class="empty-p">Entre no bolão para palpitar e competir com seus amigos!</p><button class="btn-join" onclick="openLogin()">⚽ Entrar no Bolão</button></div>`;return;}
   const allMatches=getAllMatches();
-  let html=`<div class="sec-h">🎯 PALPITES — ${escH(ST.user.name)}</div><div class="pts-legend"><span class="pleg"><span class="pleg-dot" style="background:var(--gold)"></span>Placar exato = 10 pts</span><span class="pleg"><span class="pleg-dot" style="background:var(--green)"></span>Resultado certo = 5 pts</span><span class="pleg"><span class="pleg-dot" style="background:var(--red)"></span>Errou = 0 pts</span><span class="pleg" style="margin-left:auto;color:var(--dim)">🔒 Fecha 5min antes</span></div><div class="gg">`;
+  let html=`<div class="sec-h">🎯 PALPITES — ${escH(ST.user.name)}</div><div class="pts-legend"><span class="pleg"><span class="pleg-dot" style="background:var(--gold)"></span>Placar exato = 10 pts</span><span class="pleg"><span class="pleg-dot" style="background:var(--green)"></span>Resultado certo = 5 pts</span><span class="pleg"><span class="pleg-dot" style="background:var(--red)"></span>Errou = 0 pts</span><span class="pleg" style="margin-left:auto;color:var(--dim)">🔒 Fecha 5min antes</span></div>${acertosSectionHtml(ST.preds[ST.user.name])}<div class="gg">`;
   Object.keys(GROUPS).forEach(g=>{
     const brazil=(g==='C'),gflags=GROUPS[g].map(t=>fiSm(t)).join(' '),rounds={};
     MATCHES.filter(m=>m.g===g).forEach(m=>{if(!rounds[m.r])rounds[m.r]=[];rounds[m.r].push(m);});
@@ -1224,7 +1280,7 @@ async function openPartDetail(uname){
     }
     return h;
   }
-  function ro(){const s=cs();ov.innerHTML=`<div class="pd-overlay open" id="pdOvInner"><div class="pd-box"><div class="pd-head"><div><div class="pd-name"><span class="part-av" style="width:36px;height:36px;font-size:.9rem">${escH(uname[0].toUpperCase())}</span>${escH(uname)}<span style="font-size:.7rem;color:var(--muted);font-family:var(--fb);font-weight:400">${supa?'☁️ do banco':'💾 local'}</span></div><div class="pd-stats-bar"><span><strong id="pd-pts">${s.pts}</strong> pts</span><span><strong id="pd-ct">${s.ct}</strong> palpites</span><span style="color:var(--gold)"><strong id="pd-ct10">${s.ct10}</strong> 🎯 exatos</span><span style="color:var(--green)"><strong id="pd-ct5">${s.ct5}</strong> ✅ certos</span><span style="color:var(--dim);font-size:.65rem" id="pd-changed-info"></span></div></div><div class="pd-actions"><button class="pd-save-btn" onclick="savePartPreds('${escH(uname)}')">💾 Salvar Alterações</button><button class="pd-close-btn" onclick="closePartDetail()">✕ Fechar</button></div></div><div style="max-height:68vh;overflow-y:auto"><div class="pd-row hdr"><div style="text-align:center">Data</div><div style="text-align:right">Casa</div><div style="text-align:center">Palpite</div><div>Visitante</div><div style="text-align:center">Oficial</div><div style="text-align:center">Pts</div></div>${br()}</div><div style="padding:10px 14px;font-size:.64rem;color:var(--dim);border-top:1px solid var(--border)">🔒 Jogos bloqueados têm borda dourada — admin pode editá-los mesmo assim</div></div></div>`;document.getElementById('pdOvInner').addEventListener('click',function(e){if(e.target===this)closePartDetail();});document.querySelectorAll('.sinp-sm[data-pdmid]').forEach(inp=>{inp.addEventListener('input',function(){const mid=parseInt(this.dataset.pdmid),row=this.closest('.pd-row'),hI=row.querySelector('[data-side="h"]'),aI=row.querySelector('[data-side="a"]'),hv=hI.value.trim(),av=aI.value.trim();if(hv!==''&&av!==''){const h=Math.max(0,parseInt(hv)||0),a=Math.max(0,parseInt(av)||0);_changed[mid]={h,a};hI.classList.add('changed');aI.classList.add('changed');}else{_changed[mid]=null;hI.classList.remove('changed');aI.classList.remove('changed');}const cur=_changed.hasOwnProperty(mid)?_changed[mid]:(preds[mid]||null),res=getRes(mid),pp=calcPts(cur,res),pe=document.getElementById('pdpts-'+mid);if(pe){pe.className='pd-pts '+pClass(pp);pe.textContent=pLabel(pp);}const ns=cs(),e1=document.getElementById('pd-pts'),e2=document.getElementById('pd-ct'),e3=document.getElementById('pd-ct10'),e4=document.getElementById('pd-ct5'),e5=document.getElementById('pd-changed-info');if(e1)e1.textContent=ns.pts;if(e2)e2.textContent=ns.ct;if(e3)e3.textContent=ns.ct10;if(e4)e4.textContent=ns.ct5;const nc=Object.keys(_changed).length;if(e5)e5.textContent=nc>0?`· ${nc} alteração${nc>1?'ões':''} não salva${nc>1?'s':''}`:'';});});}
+  function ro(){const s=cs();ov.innerHTML=`<div class="pd-overlay open" id="pdOvInner"><div class="pd-box"><div class="pd-head"><div><div class="pd-name"><span class="part-av" style="width:36px;height:36px;font-size:.9rem">${escH(uname[0].toUpperCase())}</span>${escH(uname)}<span style="font-size:.7rem;color:var(--muted);font-family:var(--fb);font-weight:400">${supa?'☁️ do banco':'💾 local'}</span></div><div class="pd-stats-bar"><span><strong id="pd-pts">${s.pts}</strong> pts</span><span><strong id="pd-ct">${s.ct}</strong> palpites</span><span style="color:var(--gold)"><strong id="pd-ct10">${s.ct10}</strong> 🎯 exatos</span><span style="color:var(--green)"><strong id="pd-ct5">${s.ct5}</strong> ✅ certos</span><span style="color:var(--dim);font-size:.65rem" id="pd-changed-info"></span></div></div><div class="pd-actions"><button class="pd-save-btn" onclick="savePartPreds('${escH(uname)}')">💾 Salvar Alterações</button><button class="pd-close-btn" onclick="closePartDetail()">✕ Fechar</button></div></div>${acertosSectionHtml(preds,{collapsed:true})}<div style="max-height:68vh;overflow-y:auto"><div class="pd-row hdr"><div style="text-align:center">Data</div><div style="text-align:right">Casa</div><div style="text-align:center">Palpite</div><div>Visitante</div><div style="text-align:center">Oficial</div><div style="text-align:center">Pts</div></div>${br()}</div><div style="padding:10px 14px;font-size:.64rem;color:var(--dim);border-top:1px solid var(--border)">🔒 Jogos bloqueados têm borda dourada — admin pode editá-los mesmo assim</div></div></div>`;document.getElementById('pdOvInner').addEventListener('click',function(e){if(e.target===this)closePartDetail();});document.querySelectorAll('.sinp-sm[data-pdmid]').forEach(inp=>{inp.addEventListener('input',function(){const mid=parseInt(this.dataset.pdmid),row=this.closest('.pd-row'),hI=row.querySelector('[data-side="h"]'),aI=row.querySelector('[data-side="a"]'),hv=hI.value.trim(),av=aI.value.trim();if(hv!==''&&av!==''){const h=Math.max(0,parseInt(hv)||0),a=Math.max(0,parseInt(av)||0);_changed[mid]={h,a};hI.classList.add('changed');aI.classList.add('changed');}else{_changed[mid]=null;hI.classList.remove('changed');aI.classList.remove('changed');}const cur=_changed.hasOwnProperty(mid)?_changed[mid]:(preds[mid]||null),res=getRes(mid),pp=calcPts(cur,res),pe=document.getElementById('pdpts-'+mid);if(pe){pe.className='pd-pts '+pClass(pp);pe.textContent=pLabel(pp);}const ns=cs(),e1=document.getElementById('pd-pts'),e2=document.getElementById('pd-ct'),e3=document.getElementById('pd-ct10'),e4=document.getElementById('pd-ct5'),e5=document.getElementById('pd-changed-info');if(e1)e1.textContent=ns.pts;if(e2)e2.textContent=ns.ct;if(e3)e3.textContent=ns.ct10;if(e4)e4.textContent=ns.ct5;const nc=Object.keys(_changed).length;if(e5)e5.textContent=nc>0?`· ${nc} alteração${nc>1?'ões':''} não salva${nc>1?'s':''}`:'';});});}
   ro();
 }
 async function savePartPreds(uname){const nc=Object.keys(_changed).length;if(nc===0){toast('Nenhuma alteração.');return;}if(!ST.preds[uname])ST.preds[uname]={};const tu=[],td=[];Object.entries(_changed).forEach(([mid,val])=>{const mi=parseInt(mid);if(val){ST.preds[uname][mi]=val;tu.push({apelido:uname,partida_id:mi,palpite_casa:val.h,palpite_visitante:val.a});}else{delete ST.preds[uname][mi];td.push(mi);}});save();if(supa){try{if(tu.length>0)await supa.from('palpites').upsert(tu,{onConflict:'apelido,partida_id'});for(const mi of td)await supa.from('palpites').delete().eq('apelido',uname).eq('partida_id',mi);}catch(e){}}_changed={};toast(`✅ ${nc} palpite${nc>1?'s':''} salvos!`);document.querySelectorAll('.sinp-sm.changed').forEach(i=>i.classList.remove('changed'));const e5=document.getElementById('pd-changed-info');if(e5)e5.textContent='';renderRanking();renderAdmin();}
