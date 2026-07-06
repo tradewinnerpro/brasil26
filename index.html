@@ -787,9 +787,12 @@ const FASE_DATAS = {
 //  derivado de ROUND32 + generateKnockoutMatches(), sem
 //  duplicar dado nenhum.
 // ══════════════════════════════════════════════════════
-const FULL_R32_ORDER = [75,78,73,76,74,77,79,80,83,84,81,82,86,87,85,88];
-// ordem visual da coluna de oitavas — alinhada par-a-par com FULL_R32_ORDER
-const OITAVA_ORDER   = [89,90,91,92,93,94,95,96];
+// Agrupadas por "lado da chave": as 4 primeiras (89,90,93,94) convergem
+// para a semi101 (via quartas 97,98); as 4 últimas (91,92,95,96) convergem
+// para a semi102 (via quartas 99,100). É essa hierarquia que faz as linhas
+// do bracket baterem com o card certo em cada nível.
+const FULL_R32_ORDER = [75,78,73,76,83,84,81,82,74,77,79,80,86,87,85,88];
+const OITAVA_ORDER   = [89,90,93,94,91,92,95,96];
 const QUARTA_ORDER   = [97,98,99,100];
 const SEMI_ORDER     = [101,102];
 const FINAL_ID    = 104;
